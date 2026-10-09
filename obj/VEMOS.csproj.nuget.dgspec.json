@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\50030993\\Downloads\\VEMOS\\VEMOS.csproj": {}
+    "C:\\Users\\49836834\\VEMOS\\VEMOS.csproj": {}
   },
   "projects": {
-    "C:\\Users\\50030993\\Downloads\\VEMOS\\VEMOS.csproj": {
+    "C:\\Users\\49836834\\VEMOS\\VEMOS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\50030993\\Downloads\\VEMOS\\VEMOS.csproj",
+        "projectUniqueName": "C:\\Users\\49836834\\VEMOS\\VEMOS.csproj",
         "projectName": "VEMOS",
-        "projectPath": "C:\\Users\\50030993\\Downloads\\VEMOS\\VEMOS.csproj",
-        "packagesPath": "C:\\Users\\50030993\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\50030993\\Downloads\\VEMOS\\obj\\",
+        "projectPath": "C:\\Users\\49836834\\VEMOS\\VEMOS.csproj",
+        "packagesPath": "C:\\Users\\49836834\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\49836834\\VEMOS\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\50030993\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\49836834\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
