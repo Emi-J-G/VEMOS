@@ -2589,3 +2589,253 @@ button, input {
   color: #078f7d;
   outline: none;
 }
+
+/* ==========================================================
+   V.E.M.O.S. | AJUSTES DE PROPORCIONES - 1900 PX
+   Pegar al FINAL de wwwroot/css/site.css (después del CSS actual)
+   Solo estilos: no modifica Razor, MVC, JS ni Stored Procedures.
+   Se adapta al ancho real del navegador: 1900 es referencia,
+   NO un ancho fijo que provoque scroll horizontal.
+   ========================================================== */
+
+/* 1. INICIO DE SESIÓN INICIADA: distribución de la landing */
+.signed-home-hero {
+  width: 100%;
+  max-width: 1900px;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(32px, 4.5vw, 85px);
+  min-height: 660px;
+  padding: clamp(46px, 4.5vw, 86px) clamp(28px, 5.5vw, 105px);
+}
+
+.signed-home-copy {
+  max-width: 780px;
+}
+
+.signed-home-copy h1 {
+  font-size: clamp(3.2rem, 4.2vw, 5.1rem);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.signed-home-description {
+  font-size: clamp(1.05rem, 1.15vw, 1.3rem);
+  line-height: 1.6;
+  margin: 26px 0 34px;
+}
+
+.signed-home-map-card {
+  width: min(100%, 680px);
+  padding: 12px;
+  box-shadow: 0 14px 35px rgba(8, 99, 81, 0.10);
+}
+
+.signed-home-map {
+  min-height: clamp(350px, 29vw, 455px);
+  background-position: center;
+  background-size: cover;
+}
+
+.map-label { font-size: 0.98rem; }
+.map-open-button { min-height: 50px; font-size: 0.93rem; }
+.map-filter-note { font-size: 0.92rem; }
+
+/* Tarjetas y secciones: no dejar elementos demasiado chicos a 1900 px */
+.inspiration-section,
+.quick-access-section,
+.community-section {
+  padding-inline: clamp(28px, 5.5vw, 105px);
+}
+
+.inspiration-section { padding-block: 62px 48px; }
+.inspiration-cards { gap: clamp(18px, 1.7vw, 32px); }
+.inspiration-card { padding: 24px; }
+.inspiration-image { height: clamp(185px, 13vw, 240px); margin: 0 0 23px; }
+.inspiration-card h3 { font-size: clamp(1.15rem, 1.2vw, 1.45rem); }
+.inspiration-card p { font-size: 1rem; line-height: 1.55; }
+.inspiration-disclaimer { font-size: 0.78rem; line-height: 1.5; }
+
+.quick-access-section { padding-block: 58px 68px; }
+.quick-access-grid { gap: clamp(14px, 1.3vw, 24px); }
+.quick-access-card { min-height: 148px; padding: 22px 20px; gap: 16px; }
+.quick-access-icon {
+  flex-basis: 66px;
+  width: 66px;
+  height: 66px;
+  font-size: 2.1rem;
+}
+.quick-access-card strong { font-size: 1rem; }
+.quick-access-card small { font-size: 0.84rem; line-height: 1.5; }
+
+.community-section { padding-block: 60px 65px; }
+.community-card { min-height: 245px; padding: 28px; }
+.community-card h3 { font-size: 1.4rem; }
+.community-card p { font-size: 1rem; }
+.community-card a { min-height: 46px; padding-inline: 20px; font-size: 0.9rem; }
+.safety-notice { padding: 50px clamp(28px, 5.5vw, 105px); }
+.safety-notice p { font-size: 0.98rem; }
+
+/* 2. HEADER: navegación e íconos más legibles */
+.brand-wrap {
+  max-width: 1900px;
+  margin-inline: auto;
+  min-height: 88px;
+  padding: 10px clamp(22px, 3vw, 56px);
+  gap: clamp(12px, 1.6vw, 28px);
+}
+
+.logo { width: clamp(166px, 11vw, 210px); height: 60px; }
+.search-form { height: 58px; max-width: 790px; }
+.search-input { height: 52px; }
+.search-icon img { width: 31px; height: 31px; }
+.user-header-actions { gap: clamp(12px, 1.4vw, 25px); }
+
+.header-nav-link {
+  min-width: 66px;
+  min-height: 55px;
+  gap: 9px;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+/* Los dibujitos del proyecto están hechos con ::before y ::after.
+   scale los amplía sin destruir el giro original del ícono de mapa. */
+.header-nav-icon {
+  width: 17px;
+  height: 17px;
+  scale: 1.55;
+  transform-origin: center;
+}
+
+.header-home-link {
+  min-height: 68px;
+  padding: 10px 16px;
+  border-radius: 16px;
+}
+
+.header-favorite-icon::before { font-size: 21px; }
+.profile-avatar { width: 45px; height: 45px; font-size: 1.15rem; }
+.profile-dropdown-menu { min-width: 210px; }
+.profile-dropdown-menu .dropdown-item { font-size: 0.91rem; padding-block: 9px; }
+.header-section-link { font-size: 0.88rem; padding: 10px 13px; }
+.auth-links .auth-popup-trigger { min-height: 44px; font-size: 0.88rem; }
+
+/* 3. FOOTER: columnas y formulario de suscripción proporcionados */
+.site-footer {
+  padding: 40px clamp(25px, 5vw, 95px) 22px;
+}
+
+.footer-main,
+.footer-bottom {
+  max-width: 1680px;
+}
+
+.footer-main {
+  grid-template-columns: minmax(230px, 1fr) minmax(380px, 1.7fr) minmax(325px, 1.08fr);
+  align-items: start;
+  gap: clamp(24px, 2.6vw, 50px);
+  padding-bottom: 38px;
+}
+
+.footer-logo { width: 240px; height: 85px; }
+.footer-brand p { font-size: 0.93rem; line-height: 1.4; }
+.footer-socials a { font-size: 1.14rem; }
+.footer-columns { gap: 16px; }
+.footer-columns h4 { font-size: 0.98rem; margin-bottom: 15px; }
+.footer-columns ul { font-size: 0.82rem; gap: 12px; }
+
+.footer-signup {
+  width: 100%;
+  min-height: 0;
+  margin-top: 0;
+  padding: 23px;
+  border-radius: 18px;
+  text-align: left;
+}
+.footer-signup h4 { margin-bottom: 9px; font-size: 1.12rem; }
+.footer-signup p {
+  max-width: none;
+  margin: 0 0 18px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+.footer-signup input {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+}
+.footer-signup button {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 13px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.footer-bottom { font-size: 0.76rem; }
+
+/* 4. RESPONSIVE: los cambios no deben romper la web en otras pantallas */
+@media (max-width: 1260px) {
+  .brand-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .brand-link { flex: 0 0 auto; }
+  .search-form { flex: 1 1 400px; max-width: none; }
+  .user-header-actions,
+  .auth-links { flex: 1 1 100%; justify-content: center; flex-wrap: wrap; }
+
+  .footer-main { grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.6fr); }
+  .footer-signup { grid-column: 1 / -1; }
+  .footer-columns { grid-column: auto; }
+}
+
+@media (max-width: 1100px) {
+  .signed-home-hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: 32px;
+  }
+  .signed-home-copy { max-width: 100%; }
+  .signed-home-map-column { align-items: center; }
+  .signed-home-map-card { width: min(100%, 760px); }
+  .inspiration-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quick-access-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 820px) {
+  .brand-wrap { justify-content: center; }
+  .brand-link { width: auto; }
+  .search-form { flex: 1 1 100%; }
+  .user-header-actions { gap: 12px; }
+  .inspiration-cards,
+  .quick-access-grid,
+  .community-cards { grid-template-columns: 1fr; }
+  .inspiration-image { height: 220px; }
+  .footer-main { grid-template-columns: 1fr; }
+  .footer-signup,
+  .footer-columns { grid-column: auto; }
+  .footer-brand { grid-row: auto; }
+}
+
+@media (max-width: 520px) {
+  .signed-home-hero { padding: 35px 20px 45px; }
+  .signed-home-copy h1 { font-size: clamp(2.5rem, 10vw, 3.2rem); }
+  .signed-home-description { font-size: 1rem; }
+  .signed-home-map { min-height: 280px; }
+  .map-open-button { min-width: 0; font-size: 0.75rem; }
+  .inspiration-section,
+  .quick-access-section,
+  .community-section { padding-inline: 20px; }
+  .inspiration-image { height: 180px; }
+  .header-nav-link { min-width: 55px; font-size: 0.73rem; }
+  .header-section-nav { flex-wrap: wrap; justify-content: center; margin-right: 0; }
+  .site-footer { padding-inline: 20px; }
+  .footer-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
