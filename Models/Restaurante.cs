@@ -8,6 +8,9 @@ public class Restaurante
     public string descripcion { get; set; }
     public string telefono { get; set; }
     public string tipo { get; set; }
+    public double lat { get; set; }
+    public double lng { get; set; }
+    public List<string> restricciones { get; set; } = new();
     public List<Plato> platos { get; set; }
     public int idUsuario { get; set; }
 }

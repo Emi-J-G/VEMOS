@@ -21,6 +21,45 @@ public class DB
         return restricciones;
     }
 
+    public List<Restaurante> GetRestaurantes()
+    {
+        string query = @"
+            SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo, r.idUsuario
+            FROM Restaurantes r
+            ORDER BY r.nombre";
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            var restaurantes = connection.Query<Restaurante>(query).ToList();
+
+            foreach (var restaurante in restaurantes)
+            {
+                var restricciones = connection.Query<string>(
+                    @"SELECT re.nombre
+                      FROM CertificadosRestaurantes cr
+                      INNER JOIN Restricciones re ON re.id = cr.idRestriccion
+                      WHERE cr.idRestaurante = @idRestaurante
+                      ORDER BY re.nombre",
+                    new { idRestaurante = restaurante.id }).ToList();
+
+                restaurante.restricciones = restricciones;
+
+                if (CoordenadasRestaurantes.TryGetValue(restaurante.nombre, out var ubicacion))
+                {
+                    restaurante.lat = ubicacion.lat;
+                    restaurante.lng = ubicacion.lng;
+                }
+                else
+                {
+                    restaurante.lat = -34.6037;
+                    restaurante.lng = -58.3816;
+                }
+            }
+
+            return restaurantes;
+        }
+    }
+
     private void InsertarRestricciones(SqlConnection connection, int idUsuario, IEnumerable<Restriccion> restricciones)
     {
         if (restricciones == null)

@@ -1,0 +1,53 @@
+@model VEMOS.Models.Restaurante
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model?.nombre ?? "Restaurante";
+}
+
+<section class="restaurant-detail-shell">
+    <div class="restaurant-detail-header">
+        <a class="map-page-back" href="/Home/Mapa">← Volver al mapa</a>
+    </div>
+
+    <article class="restaurant-detail-card">
+        <div class="restaurant-detail-hero">
+            <div class="restaurant-detail-badge">@Model.tipo</div>
+            <h1>@Model.nombre</h1>
+            <p>@Model.descripcion</p>
+        </div>
+
+        <div class="restaurant-detail-content">
+            <div class="restaurant-detail-info">
+                <div class="detail-item">
+                    <span class="detail-label">Dirección</span>
+                    <strong>@Model.direccion</strong>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Teléfono</span>
+                    <strong>@Model.telefono</strong>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Apto para</span>
+                    <div class="detail-tags">
+                        @if (Model.restricciones != null && Model.restricciones.Any())
+                        {
+                            foreach (var restriccion in Model.restricciones)
+                            {
+                                <span class="detail-tag">@restriccion</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="detail-tag">Sin restricciones específicas</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="restaurant-detail-actions">
+                <a class="restaurant-action-primary" href="/Home/Mapa">Ver en el mapa</a>
+                <button type="button" class="restaurant-action-secondary">Guardar favorito</button>
+            </div>
+        </div>
+    </article>
+</section>

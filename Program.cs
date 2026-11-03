@@ -65,6 +65,11 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
+    name: "mapa",
+    pattern: "Mapa",
+    defaults: new { controller = "Home", action = "Mapa" });
+
+app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 

@@ -1613,6 +1613,59 @@ button, input {
   background: rgba(255, 247, 204, 0.06);
 }
 
+.map-filter-bar {
+  margin: 18px 0 20px;
+  padding: 18px;
+  border: 1px solid rgba(8, 127, 112, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.map-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: #087f70;
+}
+
+.map-filter-header strong {
+  font-size: 0.92rem;
+}
+
+.map-filter-header span {
+  font-size: 0.76rem;
+  opacity: 0.8;
+}
+
+.map-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.map-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(8, 127, 112, 0.18);
+  border-radius: 999px;
+  background: #f4fbf8;
+  color: #087f70;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.map-filter-checkbox {
+  accent-color: #159783;
+  width: 16px;
+  height: 16px;
+}
+
 @keyframes authBackdropFadeIn {
   from {
     opacity: 0;
@@ -2193,22 +2246,6 @@ button, input {
   padding: 0 0;
 }
 
-@media (max-width: 520px) {
-  .auth-page {
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .register-card {
-    width: min(100%, 340px);
-  }
-
-  .register-form {
-    padding-right: 38px;
-    padding-left: 38px;
-  }
-}
-
 .discover-section {
   background: #FFF7CC;
   padding: 28px 5.8vw 34px;
@@ -2588,4 +2625,177 @@ button, input {
   background: #e4f3ef;
   color: #078f7d;
   outline: none;
+}
+
+.map-page-shell {
+  padding: 40px clamp(20px, 5vw, 80px) 70px;
+  background: linear-gradient(180deg, #fff8d9 0%, #fff7cc 100%);
+}
+
+.map-page-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 auto 22px;
+  max-width: 1200px;
+}
+
+.map-page-kicker {
+  margin: 0 0 8px;
+  color: #0a7f73;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.map-page-header h1 {
+  margin: 0;
+  color: #087f70;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 700;
+}
+
+.map-page-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(8, 127, 112, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: #087f70;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.map-panel {
+  max-width: 1200px;
+  height: 720px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid rgba(8, 127, 112, 0.1);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 30px 60px rgba(8, 127, 112, 0.08);
+}
+
+.map-panel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.map-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid rgba(8, 127, 112, 0.22);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.map-search-wrap span img {
+  width: 40px;
+  height: 40px;
+}
+
+.map-search-wrap input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #087f70;
+  font-size: 0.96rem;
+  outline: none;
+}
+
+.map-search-wrap input::placeholder {
+  color: rgba(8, 127, 112, 0.6);
+}
+
+
+
+.map-locate-btn {
+  min-height: 52px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 999px;
+  background: #159783;
+  color: #fff7cc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#map {
+  width: 100%;
+  height: 620px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(8, 127, 112, 0.12);
+}
+
+.leaflet-container {
+  background: #dff4ef;
+  font-family: 'Comfortaa', Arial, sans-serif;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border-radius: 16px;
+  background: #fffdf5;
+}
+
+.map-popup {
+  display: grid;
+  gap: 8px;
+  color: #087f70;
+  font-family: 'Comfortaa', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.map-popup strong {
+  font-size: 1rem;
+}
+
+.map-popup small {
+  color: #0a7f73;
+}
+
+.map-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.map-popup-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #159783;
+  color: #fff7cc;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .restaurant-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-detail-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }

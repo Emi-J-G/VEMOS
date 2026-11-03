@@ -13,6 +13,73 @@ public class HomeController : Controller
         _logger = logger;
     }
 
+    private static List<Restaurante> GetRestaurantesDemo()
+    {
+        return new List<Restaurante>
+        {
+            new Restaurante
+            {
+                id = 1,
+                nombre = "La Trattoria",
+                direccion = "Av. Corrientes 1234, CABA",
+                descripcion = "Pasta y cocina italiana con opciones aptas para celíacos y vegetarianos.",
+                telefono = "+54 11 4567-8901",
+                tipo = "Italiano",
+                lat = -34.6039,
+                lng = -58.3835,
+                restricciones = new List<string> { "Celiaquía", "Vegetariano" }
+            },
+            new Restaurante
+            {
+                id = 2,
+                nombre = "Bamboo House",
+                direccion = "Av. Santa Fe 2000, CABA",
+                descripcion = "Comida asiática con platos veganos y opciones de baja carga glucémica.",
+                telefono = "+54 11 4321-7788",
+                tipo = "Asiático",
+                lat = -34.6017,
+                lng = -58.3782,
+                restricciones = new List<string> { "Vegano", "Vegetariano", "Celiaquía" }
+            },
+            new Restaurante
+            {
+                id = 3,
+                nombre = "Verde Mío",
+                direccion = "Calle Defensa 887, CABA",
+                descripcion = "Menú saludable con platos sin lactosa y aptos para diabetes.",
+                telefono = "+54 11 5132-1212",
+                tipo = "Saludable",
+                lat = -34.6064,
+                lng = -58.3920,
+                restricciones = new List<string> { "Vegano", "Diabetes", "Lactosa" }
+            },
+            new Restaurante
+            {
+                id = 4,
+                nombre = "El Patio",
+                direccion = "Pasaje Rivadavia 45, CABA",
+                descripcion = "Ambiente familiar con opciones kosher y halal para grupos diversos.",
+                telefono = "+54 11 4888-3333",
+                tipo = "Familiar",
+                lat = -34.5998,
+                lng = -58.3864,
+                restricciones = new List<string> { "Vegetariano", "Kosher", "Halal" }
+            },
+            new Restaurante
+            {
+                id = 5,
+                nombre = "Cocina de la Plaza",
+                direccion = "Plaza de Mayo 55, CABA",
+                descripcion = "Restaurante casero con menús pensados para alergias e intolerancias.",
+                telefono = "+54 11 5623-4411",
+                tipo = "Casero",
+                lat = -34.6110,
+                lng = -58.3738,
+                restricciones = new List<string> { "Celiaquía", "Alergias", "Diabetes" }
+            }
+        };
+    }
+
     public IActionResult Index(string mensaje)
     {
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
@@ -38,6 +105,64 @@ public class HomeController : Controller
         ViewBag.filtrosActivos = filtrosActivos;
         return View();
     }    
+
+    public IActionResult Mapa()
+    {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
+        {
+            return RedirectToAction("Index");
+        }
+
+        DB db = new DB();
+        string usuario = HttpContext.Session.GetString("Usuario");
+        var restricciones = db.GetRestriccionesByUsuario(usuario);
+        var restaurantes = db.GetRestaurantes();
+
+        if (!restaurantes.Any())
+        {
+            restaurantes = GetRestaurantesDemo();
+        }
+
+        ViewBag.RestriccionesUsuario = restricciones;
+        ViewBag.RestriccionesDisponibles = new[]
+        {
+            "Celiaquía",
+            "Diabetes",
+            "Kosher",
+            "Halal",
+            "Lactosa",
+            "Vegano",
+            "Vegetariano",
+            "Alergias"
+        };
+
+        return View(restaurantes);
+    }
+
+    public IActionResult DetalleRestaurante(string nombre)
+    {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
+        {
+            return RedirectToAction("Index");
+        }
+
+        var restaurantes = new DB().GetRestaurantes();
+        var restaurante = restaurantes
+            .FirstOrDefault(r => string.Equals(r.nombre, nombre, StringComparison.OrdinalIgnoreCase));
+
+        if (restaurante == null)
+        {
+            restaurante = GetRestaurantesDemo()
+                .FirstOrDefault(r => string.Equals(r.nombre, nombre, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (restaurante == null)
+        {
+            return NotFound();
+        }
+
+        return View(restaurante);
+    }
 
     public IActionResult Privacy()
     {

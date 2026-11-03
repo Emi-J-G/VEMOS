@@ -1,0 +1,216 @@
+@model IEnumerable<VEMOS.Models.Restaurante>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Mapa";
+
+    var restriccionesUsuario = ViewBag.RestriccionesUsuario as IEnumerable<Restriccion> ?? new List<Restriccion>();
+    var restriccionesTodos = ViewBag.RestriccionesDisponibles as string[] ?? new[]
+    {
+        "Celiaquía",
+        "Diabetes",
+        "Kosher",
+        "Halal",
+        "Lactosa",
+        "Vegano",
+        "Vegetariano",
+        "Alergias"
+    };
+
+    var nombresUsuario = new HashSet<string>(
+        restriccionesUsuario
+            .Where(r => !string.IsNullOrWhiteSpace(r.nombre))
+            .Select(r => r.nombre.Trim()),
+        StringComparer.OrdinalIgnoreCase);
+
+    var restaurantes = Model?.ToList() ?? new List<VEMOS.Models.Restaurante>();
+}
+
+<section class="map-page-shell">
+    <div class="map-page-header">
+        <div>
+            <p class="map-page-kicker">Explorá cerca tuyo</p>
+            <h1>Mapa de restaurantes</h1>
+        </div>
+        <a class="map-page-back" href="/Home/Home">← Volver al inicio</a>
+    </div>
+
+    <div class="map-panel">
+        <div class="map-panel-toolbar">
+            <div class="map-search-wrap">
+                <span aria-hidden="true"><img src="~/Logos/busqueda.png" alt="Buscar" /></span>
+                <input id="mapSearch" type="text" placeholder="Buscar ubicación o restaurante" aria-label="Buscar ubicación o restaurante" />
+            </div>
+            <button type="button" id="locateBtn" class="map-locate-btn">Mi ubicación</button>
+        </div>
+
+        <div class="map-filter-bar">
+            <div class="map-filter-header">
+                <strong>Filtrar por restricciones</strong>
+                <span id="mapFilterSummary">@restriccionesUsuario.Count() activas</span>
+            </div>
+
+            <div class="map-filter-list" id="mapFilterList">
+                @foreach (var restriccion in restriccionesTodos)
+                {
+                    var checkedValue = nombresUsuario.Contains(restriccion) ? "checked" : "";
+                    <label class="map-filter-option">
+                        <input type="checkbox" value="@restriccion" @checkedValue class="map-filter-checkbox" />
+                        <span>@restriccion</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div id="map" aria-label="Mapa de restaurantes"></div>
+    </div>
+</section>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        const restaurantes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(restaurantes.Select(r => new {
+            nombre = r.nombre,
+            lat = r.lat,
+            lng = r.lng,
+            descripcion = r.descripcion,
+            restricciones = r.restricciones ?? new List<string>()
+        })));
+
+        const usuariosRestricciones = [
+            @foreach (var restriccion in restriccionesUsuario.Where(r => !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
+            {
+                <text>"@restriccion",</text>
+            }
+        ];
+        const allRestrictions = [
+            @foreach (var restriccion in restriccionesTodos)
+            {
+                <text>"@restriccion",</text>
+            }
+        ];
+
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([-34.6037, -58.3816], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const markers = new Map();
+
+        function getSelectedRestrictions() {
+            return [...document.querySelectorAll('.map-filter-checkbox:checked')]
+                .map(input => input.value);
+        }
+
+        function updateFilterSummary(selected) {
+            const summary = document.getElementById('mapFilterSummary');
+            summary.textContent = selected.length > 0
+                ? `${selected.length} activas`
+                : 'Sin filtros activos';
+        }
+
+        function createPopupContent(restaurante) {
+            return `
+                <div class="map-popup">
+                    <strong>${restaurante.nombre}</strong>
+                    <span>${restaurante.descripcion}</span>
+                    <small>${(restaurante.restricciones || []).join(', ') || 'Sin restricciones cargadas'}</small>
+                    <div class="map-popup-actions">
+                        <a class="map-popup-link" href="/Home/DetalleRestaurante?nombre=${encodeURIComponent(restaurante.nombre)}">Ver información</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMarkers() {
+            const selectedRestrictions = getSelectedRestrictions();
+            updateFilterSummary(selectedRestrictions);
+
+            markers.forEach((marker) => map.removeLayer(marker));
+            markers.clear();
+
+            const restaurantesFiltrados = restaurantes.filter((restaurante) => {
+                if (selectedRestrictions.length === 0) {
+                    return true;
+                }
+
+                return selectedRestrictions.every((restriccion) => (restaurante.restricciones || []).includes(restriccion));
+            });
+
+            restaurantesFiltrados.forEach((restaurante) => {
+                const marker = L.marker([restaurante.lat, restaurante.lng])
+                    .bindPopup(createPopupContent(restaurante));
+
+                marker.addTo(map);
+                markers.set(`${restaurante.nombre}-${restaurante.lat}`, marker);
+            });
+
+            if (restaurantesFiltrados.length === 0) {
+                const emptyMessage = L.popup()
+                    .setLatLng([-34.6037, -58.3816])
+                    .setContent('<div class="map-popup"><strong>No hay restaurantes</strong><br>Probá otra combinación de restricciones.</div>');
+                emptyMessage.addTo(map);
+                setTimeout(() => emptyMessage.closePopup(), 2500);
+            }
+        }
+
+        const filteredByDefault = usuariosRestricciones.length > 0 ? usuariosRestricciones : [];
+        document.querySelectorAll('.map-filter-checkbox').forEach((checkbox) => {
+            checkbox.checked = filteredByDefault.includes(checkbox.value);
+        });
+
+        renderMarkers();
+
+        document.querySelectorAll('.map-filter-checkbox').forEach((checkbox) => {
+            checkbox.addEventListener('change', renderMarkers);
+        });
+
+        const searchInput = document.getElementById('mapSearch');
+        searchInput.addEventListener('input', function () {
+            const text = this.value.trim().toLowerCase();
+            const selectedRestrictions = getSelectedRestrictions();
+
+            markers.forEach((marker) => map.removeLayer(marker));
+            markers.clear();
+
+            const restaurantesFiltrados = restaurantes.filter((restaurante) => {
+                const coincidenRestriccion = selectedRestrictions.length === 0 || selectedRestrictions.every((r) => (restaurante.restricciones || []).includes(r));
+                const coincidenTexto = !text || (restaurante.nombre || '').toLowerCase().includes(text) || (restaurante.descripcion || '').toLowerCase().includes(text);
+                return coincidenRestriccion && coincidenTexto;
+            });
+
+            restaurantesFiltrados.forEach((restaurante) => {
+                const marker = L.marker([restaurante.lat, restaurante.lng])
+                    .bindPopup(createPopupContent(restaurante));
+                marker.addTo(map);
+                markers.set(`${restaurante.nombre}-${restaurante.lat}`, marker);
+            });
+        });
+
+        document.getElementById('locateBtn').addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                alert('Tu navegador no soporta geolocalización.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const marker = L.marker([lat, lng])
+                    .addTo(map)
+                    .bindPopup('<div class="map-popup"><strong>Tu ubicación</strong></div>');
+
+                map.setView([lat, lng], 15);
+                setTimeout(() => marker.openPopup(), 200);
+            }, function () {
+                alert('No pudimos obtener tu ubicación.');
+            });
+        });
+    </script>
+}
