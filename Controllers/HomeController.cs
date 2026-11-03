@@ -15,6 +15,10 @@ public class HomeController : Controller
 
     public IActionResult Index(string mensaje)
     {
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
+        {
+            return RedirectToAction("Home");
+        }
         ViewBag.Usuario = HttpContext.Session.GetString("Usuario");
         ViewBag.NombreCompleto = HttpContext.Session.GetString("NombreCompleto");
         ViewBag.Mensaje = mensaje;
@@ -23,6 +27,10 @@ public class HomeController : Controller
 
     public IActionResult Home()
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
+        {
+            return RedirectToAction("Index");
+        }
         DB db = new DB();
         List<Restriccion> filtrosActivos = new List<Restriccion>();
         string usuario = HttpContext.Session.GetString("Usuario");
