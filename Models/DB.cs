@@ -5,7 +5,17 @@ using VEMOS.Models;
 public class DB
 {
     string _connectionString = @"Server=localhost;DataBase=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
-    
+
+    private static readonly Dictionary<string, (double lat, double lng)> CoordenadasRestaurantes =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["La Pampa"] = (-34.6037, -58.3816),
+            ["El Ateneo"] = (-34.5952, -58.3938),
+            ["Don Julio"] = (-34.5875, -58.4294),
+            ["Café Tortoni"] = (-34.6035, -58.3739),
+            ["Nomo"] = (-34.5947, -58.4022)
+        };
+
     public List<Restriccion> GetRestriccionesByUsuario(string usuario)
     {
         string query = @"SELECT r.id, r.nombre, r.descripcion
