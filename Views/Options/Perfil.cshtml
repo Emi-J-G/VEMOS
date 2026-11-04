@@ -2,15 +2,17 @@
 
 @{
     ViewData["Title"] = "Perfil";
+    var usuario = Model;
 }
 
 <body>
     <section class = "username">
-        <h1>Bienvenido, @ViewBag.Usuario.username</h1>
+        <h1>Bienvenido, @(usuario?.username ?? "Usuario")</h1>
     </section>
+
     <section class="user-info">
         <h2>Información del usuario</h2>
-        <p><strong>Nombre completo:</strong> @ViewBag.Usuario.nombre</p>
-        <p><strong>Apellido:</strong> @ViewBag.Usuario.apellido</p>
-        <p><strong>Email:</strong> @ViewBag.Usuario.email</p>
+        <p><strong>Nombre completo:</strong> @(usuario?.nombre ?? "-")</p>
+        <p><strong>Email:</strong> @(usuario?.email ?? "-")</p>
+    </section>
 </body>

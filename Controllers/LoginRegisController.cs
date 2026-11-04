@@ -48,13 +48,26 @@ public class LoginRegisController : Controller
         var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
             ?? claims.FirstOrDefault(c => c.Type == "name")?.Value
             ?? email ?? "Usuario Google";
+        var apellido = claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value
+            ?? claims.FirstOrDefault(c => c.Type == "family_name")?.Value
+            ?? string.Empty;
 
-        var usuarioGoogle = new Usuario
+        DB db = new DB();
+        Usuario usuarioGoogle = db.ObtenerUsuarioPorEmail(email);
+
+        if (usuarioGoogle == null)
         {
-            username = email ?? name,
-            nombre = name,
-            email = email
-        };
+            usuarioGoogle = new Usuario
+            {
+                username = email ?? name,
+                nombre = name,
+                apellido = apellido,
+                email = email,
+                tipo = "Google",
+                contrasena = string.Empty,
+                restricciones = new List<Restriccion>()
+            };
+        }
 
         HttpContext.Session.SetString("Usuario", usuarioGoogle.username);
         HttpContext.Session.SetString("NombreCompleto", usuarioGoogle.nombre ?? string.Empty);

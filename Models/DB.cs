@@ -16,6 +16,20 @@ public class DB
             ["Nomo"] = (-34.5947, -58.4022)
         };
 
+    private void CargarRestriccionesUsuario(SqlConnection connection, Usuario usuario)
+    {
+        if (usuario == null)
+            return;
+
+        const string query = @"SELECT r.id, r.nombre, r.descripcion
+                               FROM RestriccionesUsuarios ru
+                               INNER JOIN Restricciones r ON ru.idRestriccion = r.id
+                               WHERE ru.idUsuario = @idUsuario";
+
+        var restricciones = connection.Query<Restriccion>(query, new { idUsuario = usuario.id }).ToList();
+        usuario.restricciones = restricciones;
+    }
+
     public List<Restriccion> GetRestriccionesByUsuario(string usuario)
     {
         string query = @"SELECT r.id, r.nombre, r.descripcion
@@ -104,8 +118,7 @@ public class DB
         string query = "exec insertUser @username, @nombre, @apellido, @email, @contrasena, @tipo";
         string rquery = @"insertRestricciones @idUsuario, @nombre";
         using (SqlConnection connection = new SqlConnection(_connectionString)) { 
-            connection.Open(); //mantiene la bd abierta mientras se ejecuta el using, es mas eficiente bajo varios inserts.
-            //inserta user
+            connection.Open();
             int nuevoId = connection.ExecuteScalar<int>(query, new { username = usuario.username, nombre = usuario.nombre, apellido = usuario.apellido, email = usuario.email, contrasena = usuario.contrasena, tipo = usuario.tipo });
             usuario.id = nuevoId;
 
@@ -128,8 +141,8 @@ public class DB
                 List<Restriccion> restricciones = connection.Query<Restriccion>(rquery, new { idUser = usuario.id }).ToList();
                 usuario.restricciones = restricciones;
             }
+            return usuario;
         }
-        return usuario;
     }
 
     //trae un usuario si su user existe
@@ -137,16 +150,49 @@ public class DB
         string query = "exec getUsuarioByUsername @pusername";
         Usuario usuario = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
+            connection.Open();
             usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pusername = username });
+            if (usuario != null)
+            {
+                CargarRestriccionesUsuario(connection, usuario);
+            }
+            return usuario;
         }
-        return usuario;
     }
     public Usuario emUsuarioExiste(string email) {
         string query = "exec getUsuarioByEmail @pemail";
         Usuario usuario = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
+            connection.Open();
             usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email});
+            if (usuario != null)
+            {
+                CargarRestriccionesUsuario(connection, usuario);
+            }
+            return usuario;
         }
-        return usuario;
+    }
+
+    public Usuario ObtenerUsuarioPorEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        string query = "exec getUsuarioByEmail @pemail";
+        string rquery = @"exec getRestriccionesByidUser @idUser";
+
+        Usuario usuario = null;
+
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Open();
+            usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email });
+
+            if (usuario == null)
+                return null;
+
+            CargarRestriccionesUsuario(connection, usuario);
+            return usuario;
+        }
     }
 }
