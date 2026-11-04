@@ -3,22 +3,27 @@
     ViewData["Title"] = "Inicio";
 }
 
+
 @if (!string.IsNullOrEmpty(ViewBag.Mensaje as string))
 {
     <div class="auth-banner-message" role="alert">@ViewBag.Mensaje</div>
 }
+
 
 <div class="auth-modal-backdrop" id="login-modal" aria-hidden="true">
     <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
         <div class="login-card auth-modal-card">
             <button type="button" class="auth-modal-close" aria-label="Cerrar">×</button>
 
+
             <h1 class="auth-title" id="login-title">Iniciar sesión</h1>
+
 
             @if (!string.IsNullOrEmpty(ViewBag.Mensaje as string))
             {
                 <p class="auth-message">@ViewBag.Mensaje</p>
             }
+
 
             <form class="login-form" action='@Url.Action("Loguear", "LoginRegis")' method="POST">
                 <input class="auth-input" type="text" name="nombreUsuario" placeholder="Nombre de usuario" required />
@@ -26,17 +31,20 @@
                 <button class="auth-submit" type="submit">Ingresar</button>
             </form>
 
+
             <div class="auth-divider">
                 <span>Otras opciones</span>
             </div>
 
+
             <div class="auth-alt-actions">
                 <button type="button" class="auth-link auth-switch-trigger" data-auth-modal="register-modal">Registrarse</button>
-                <a href="@Url.Action("GoogleLogin", "LoginRegis")" class="auth-google" type="button">Iniciar sesión con Google</a>
+                <a href="@Url.Action("GoogleLogin", "LoginRegis")" class="auth-google">Iniciar sesión con Google</a>
             </div>
         </div>
     </div>
 </div>
+
 
 <div class="auth-modal-backdrop" id="register-modal" aria-hidden="true">
     <div class="auth-modal auth-modal-large" role="dialog" aria-modal="true" aria-labelledby="register-title">
@@ -44,10 +52,12 @@
             <button type="button" class="auth-modal-close" aria-label="Cerrar">×</button>
             <h1 class="auth-title" id="register-title">Registrarse</h1>
 
+
             @if (!string.IsNullOrEmpty(ViewBag.Mensaje as string))
             {
                 <p class="auth-message">@ViewBag.Mensaje</p>
             }
+
 
             <form class="login-form register-form" action='@Url.Action("Registrar", "LoginRegis")' method="POST" onsubmit="return validateRegisterForm();">
                 <div class="register-layout">
@@ -63,14 +73,17 @@
                         <label class="sr-only" for="email">Correo electrónico</label>
                         <input class="auth-input" type="email" id="email" name="email" placeholder="Correo electrónico" autocomplete="email" required />
 
+
                         <label class="sr-only" for="tipo">Tipo de cuenta</label>
                         <select class="auth-select" id="tipo" name="tipo" aria-label="Tipo de cuenta">
                             <option value="Cliente">Cliente</option>
                             <option value="Restaurante">Restaurante</option>
                         </select>
 
+
                         <button class="auth-submit" type="submit">Registrarse</button>
                     </div>
+
 
                     <div class="register-restrictions-wrap">
                         <fieldset class="restrictions-box">
@@ -90,17 +103,20 @@
                 </div>
             </form>
 
+
             <div class="auth-divider">
                 <span>Otras opciones</span>
             </div>
 
+
             <div class="auth-alt-actions">
-                <a href="@Url.Action("GoogleLogin", "LoginRegis")" class="auth-google" type="button"><span class="google-mark" aria-hidden="true">G</span>Continuar con Google</a>
+                <a href="@Url.Action("GoogleLogin", "LoginRegis")" class="auth-google"><span class="google-mark" aria-hidden="true">G</span>Continuar con Google</a>
                 <button type="button" class="auth-link auth-switch-trigger" data-auth-modal="login-modal">Iniciar sesión</button>
             </div>
         </div>
     </div>
 </div>
+
 
 <section class="landing-hero" id="inicio">
     <div class="hero-copy">
@@ -109,28 +125,34 @@
             <span>Comer afuera también es para vos</span>
         </div>
 
+
         <h1>
             Encontrá lugares<br />
             para comer sin<br />
             preocupaciones
         </h1>
 
+
         <div class="hero-divider"></div>
+
 
         <p>
             Buscá restaurantes que se adapten a tus necesidades alimentarias.<br />
             Descubrí opciones, consultá información y elegí con más tranquilidad.
         </p>
 
-        <div class="search-strip">
+
+        <form class="search-strip" id="guest-search-form" role="search">
             <div class="search-input-wrap">
                 <span class="search-icon"><img src="~/Logos/busqueda.png" alt="Buscar" /></span>
-                <input type="text" placeholder="Buscar un restaurante o un barrio..." aria-label="Buscar restaurante o barrio" />
+                <input type="search" id="guest-search-input" name="q" placeholder="Buscar un restaurante o un barrio..." aria-label="Buscar restaurante o barrio" />
             </div>
-            <button type="button" aria-label="Buscar">→</button>
-        </div>
+            <button type="submit" aria-label="Registrarse para buscar restaurantes">→</button>
+        </form>
+
 
         <div class="need-label">Explorá según tus necesidades:</div>
+
 
         <div class="restriction-list">
             <label class="chip"><p>Sin TACC</p></label>
@@ -140,13 +162,16 @@
         </div>
     </div>
 
+
     <div class="hero-visual">
         <div class="visual-card">
             <div class="float-badge">Todas los lugares.<br />Todas las personas.</div>
 
+
             <div class="store-panel">
                 <img src="~/Images/arturito.jpg" alt="Arturito" />
             </div>
+
 
             <div class="simple-filter">
                 <div class="mini-check"></div>
@@ -158,6 +183,7 @@
         </div>
     </div>
 </section>
+
 
 <section class="landing-features" aria-label="Beneficios de V.E.M.O.S.">
     <article class="feature-card">
@@ -190,11 +216,13 @@
     </article>
 </section>
 
+
 <section class="discover-section" id="descubri" aria-label="Descubrir lugares para comer">
     <div class="discover-intro">
         <h1>Descubrí dónde comer</h1>
         <p>Explorá los lugares disponibles y elegí los filtros que necesites.</p>
     </div>
+
 
     <div class="discover-layout">
         <div class="map-panel" aria-label="Mapa de restaurantes">
@@ -203,14 +231,17 @@
                 <span>Explorá cerca tuyo</span>
             </div>
 
+
             <div class="map-surface">
-                <button type="button" class="map-button">Ver mapa completo <span aria-hidden="true">→</span></button>
+                <button type="button" class="map-button" data-auth-modal="register-modal">Ver mapa completo <span aria-hidden="true">→</span></button>
             </div>
         </div>
+
 
         <div class="discover-cards">
             <h2>Lugares para descubrir</h2>
             <p>Ejemplos visuales para el prototipo</p>
+
 
             <div class="suggestions-grid">
                 <article class="mini-card">
@@ -223,6 +254,7 @@
                     </div>
                 </article>
 
+
                 <article class="mini-card">
                     <div class="card-photo">
                         <img src="~/Images/plato-2.png" alt="Plato de comida vegetariana" />
@@ -232,6 +264,7 @@
                         <p>Descubrí propuestas para vos.</p>
                     </div>
                 </article>
+
 
                 <article class="mini-card">
                     <div class="card-photo">
@@ -247,11 +280,13 @@
     </div>
 </section>
 
+
 <section class="how-section" id="como-funciona" aria-label="Cómo funciona V.E.M.O.S.">
     <div class="how-header">
         <h2>¿Cómo funciona V.E.M.O.S.?</h2>
         <p>En tres pasos, encontrá opciones que se adapten a vos.</p>
     </div>
+
 
     <div class="steps-grid">
         <article class="step-card">
@@ -262,6 +297,7 @@
             <p>Seleccioná las restricciones o preferencias alimentarias que necesites.</p>
         </article>
 
+
         <article class="step-card">
             <div class="step-card-header">
                 <div class="step-index">02</div>
@@ -269,6 +305,7 @@
             </div>
             <p>Encontrá opciones gastronómicas y consultá la ubicación.</p>
         </article>
+
 
         <article class="step-card">
             <div class="step-card-header">
@@ -283,8 +320,9 @@
     <div class="signup-content">
         <h2>Tu próxima salida comienza acá</h2>
         <p>Creá tu cuenta y empezá a navegar por el mapa sin costo.</p>
-        <a class="cta-button" href="/LoginRegis/Registro">Crear una cuenta</a>
+        <button type="button" class="cta-button" data-auth-modal="register-modal">Crear una cuenta</button>
     </div>
+
 
     <div class="signup-card" aria-label="Todos los lugares. Todas las personas.">
         <p>Todos los lugares.<br />Todas las personas.</p>
@@ -292,15 +330,3 @@
     </div>
 </section>
 
-<script>
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
-</script>

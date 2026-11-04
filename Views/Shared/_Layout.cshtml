@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,11 +19,13 @@
                 : "U");
     }
 
+
     <header class="topbar">
         <div class="brand-wrap">
             <a href="/" class="brand-link" aria-label="Ir a inicio">
                 <img src="~/Images/Logotipo.svg" alt="VEMOS" class="logo" />
             </a>
+
 
             <form class="search-form" action="/Buscar" method="get" role="search">
                 <span class="search-icon"><img src="~/Logos/busqueda.png" alt="Buscar" /></span>
@@ -76,7 +78,6 @@
                         <a class="header-section-link" href="#descubri">Descubrí</a>
                         <a class="header-section-link" href="#como-funciona">Cómo funciona</a>
                     </div>
-
                     <button type="button" class="auth-popup-trigger" data-auth-modal="register-modal">Registrarse</button>
                     <button type="button" class="auth-popup-trigger" data-auth-modal="login-modal">Iniciar sesión</button>
                 </nav>
@@ -84,14 +85,14 @@
         </div>
     </header>
 
+
+
     <div class="auth-modal-backdrop" id="report-modal" aria-hidden="true">
         <div class="auth-modal auth-modal-medium" role="dialog" aria-modal="true" aria-labelledby="report-title">
             <div class="login-card auth-modal-card report-card">
                 <button type="button" class="auth-modal-close" aria-label="Cerrar">×</button>
-
                 <h1 class="auth-title" id="report-title">Reportar un problema</h1>
                 <p class="auth-message">Contanos qué está fallando para que podamos revisarlo.</p>
-
                 <form class="login-form report-form" method="post" action="#" onsubmit="event.preventDefault();">
                     <label class="sr-only" for="report-category">Tipo de problema</label>
                     <select class="auth-select" id="report-category" name="tipoProblema" aria-label="Tipo de problema">
@@ -101,10 +102,8 @@
                         <option value="Contenido incorrecto">Contenido incorrecto</option>
                         <option value="Otro">Otro</option>
                     </select>
-
                     <label class="sr-only" for="report-description">Descripción</label>
                     <textarea class="auth-input auth-textarea" id="report-description" name="descripcion" rows="5" placeholder="Describe el problema" required></textarea>
-
                     <button class="auth-submit" type="submit">Enviar reporte</button>
                 </form>
             </div>
@@ -115,11 +114,12 @@
         @RenderBody()
     </main>
 
+
     <footer class="site-footer">
         <div class="footer-main">
             <div class="footer-brand">
                 <img src="~/Images/Logotipo2.svg" alt="VEMOS" class="footer-logo" />
-                <p>Todos los lugares. Todos los<br />personas.</p>
+                <p>Todos los lugares. Todas las<br />personas.</p>
                 <div class="footer-socials" aria-label="Redes sociales">
                     <a href="#" aria-label="Instagram">◎</a>
                     <a href="#" aria-label="Facebook">f</a>
@@ -128,14 +128,14 @@
                 </div>
             </div>
 
+
             <div class="footer-columns">
                 <div>
                     <h4>Navegación</h4>
                     <ul>
-                        <li><a href="/">Inicio</a></li>
-                        <li><a href="/Mapa">Mapa</a></li>
-                        <li><a href="/Home/QuienesSomos">Explorar quienes somos</a></li>
-                        <li><a href="/Contacto">Contactos</a></li>
+                        <li><a href="/#inicio">Inicio</a></li>
+                        <li><a href="/#descubri">Descubrí</a></li>
+                        <li><a href="/#como-funciona">Cómo funciona</a></li>
                     </ul>
                 </div>
                 <div>
@@ -158,14 +158,16 @@
                 </div>
             </div>
 
-            <form class="footer-signup" action="#" method="post">
+
+            <form class="footer-signup" id="footer-register-form" action="#" method="post" data-register-url='@Url.Action("Index", "Home")'>
                 <h4>¡Móntate al día!</h4>
-                <p>Ingresa a apoyo y mejora tu experiencia en VEMOS.</p>
+                <p>Ingresá tu correo y empezá a crear tu cuenta en V.E.M.O.S.</p>
                 <label class="sr-only" for="footer-email">Tu correo electrónico</label>
-                <input id="footer-email" name="email" type="email" placeholder="✉  Tu correo electrónico" required />
+                <input id="footer-email" name="email" type="email" placeholder="✉  Tu correo electrónico" autocomplete="email" inputmode="email" maxlength="254" pattern="[^\s@@]+@@[^\s@@]+\.[A-Za-z]{2,}" title="Ingresá un correo válido, por ejemplo nombre@gmail.com" required />
                 <button type="submit">Suscribirse</button>
             </form>
         </div>
+
 
         <div class="footer-bottom">
             <span>© 2025 VEMOS</span>
@@ -178,9 +180,11 @@
         </div>
     </footer>
 
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/vemos-registro-acceso.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

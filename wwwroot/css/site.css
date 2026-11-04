@@ -4,6 +4,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Desplazamiento de los enlaces del header y footer (header fijo). */
+#inicio, #descubri, #como-funciona {
+  scroll-margin-top: 100px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 html, body {
   margin: 0;
   min-height: 100%;
@@ -950,23 +959,33 @@ button, input {
   margin-right: 12px;
 }
 
-.header-section-link {
-  border: 2px solid #188D78;
-  background: #DE9929;
-  color: #FFF7CC;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 11px 17px;
-  border-radius: 18px;
-  cursor: pointer;
-  transition: background-color .2s ease, color .2s ease, transform .2s ease;
+/* Navegación de la landing pública, compartida desde _Layout.cshtml. */
+.topbar .header-section-nav a.header-section-link,
+.topbar .header-section-nav a.header-section-link:link,
+.topbar .header-section-nav a.header-section-link:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 50px;
+  padding: 11px 17px;
+  border: 2px solid #188D78;
+  border-radius: 18px;
+  background: #DE9929;
+  color: #FFF7CC !important; /* Evita el azul predeterminado de enlaces. */
+  font-size: 15px;
+  font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, transform .2s ease;
+}
+
+.topbar .header-section-nav a.header-section-link:hover,
+.topbar .header-section-nav a.header-section-link:focus-visible {
+  background: #FFF7CC;
+  color: #188D78 !important;
+  outline-offset: 3px;
 }
 
 .auth-links .auth-popup-trigger {
@@ -1129,20 +1148,39 @@ button, input {
   max-width: 700px;
 }
 
-.chip {
+/* Filtros informativos de la landing, no son botones redondos. */
+.restriction-list .chip {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
+  justify-content: center;
   gap: 9px;
-  padding: 10px 16px;
-  border-radius: 999px;
+  width: auto;
+  min-height: 44px;
+  padding: 10px 20px;
   border: 2px solid rgba(24, 141, 120, 0.75);
+  border-radius: 999px;
+  background: #fffbe6;
   color: #188D78;
   font-size: 0.9rem;
   font-weight: 700;
-  background-color:#fffbe6;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.chip input {
+/* El HTML usa <label class="chip"><p>…</p></label>.
+   Quitar el margin de <p> evita el círculo exageradamente alto. */
+.restriction-list .chip p {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.restriction-list .chip input {
   accent-color: #188D78;
   width: 16px;
   height: 16px;
@@ -1413,12 +1451,15 @@ button, input {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  min-width: 0;
   gap: 4px;
 }
 
 .footer-logo {
-  width: 240px;
-  height: 85px;
+  display: block;
+  width: 335px;
+  max-width: 100%;
+  height: 118px;
   object-fit: contain;
   object-position: left center;
 }
@@ -1433,14 +1474,27 @@ button, input {
 .footer-socials {
   display: flex;
   align-items: center;
-  gap: 17px;
+  gap: 14px;
 }
 
 .footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   color: #FFF7CC !important;
   text-decoration: none;
-  font-size: 1.14rem;
+  font-size: 1.65rem;
   font-weight: 700;
+  line-height: 1;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.footer-socials a:hover,
+.footer-socials a:focus-visible {
+  transform: translateY(-3px);
+  color: #FFDB57 !important;
 }
 
 .footer-columns {
@@ -1448,7 +1502,7 @@ button, input {
   display: grid;
   grid-template-columns: repeat(3, minmax(120px, 1fr));
   gap: 16px;
-  padding-top: 15px;
+  padding-top: 34px;
 }
 
 .footer-columns h4 {
@@ -1679,7 +1733,7 @@ button, input {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr);
   gap: 18px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .register-fields {
@@ -1690,11 +1744,13 @@ button, input {
 
 .register-restrictions-wrap {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .restrictions-box {
   width: 100%;
+  min-width: 0;
   background: rgba(255, 247, 204, 0.06);
 }
 
@@ -1753,6 +1809,19 @@ button, input {
   .register-layout {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .restrictions-box {
+    padding: 12px;
+  }
+
+  .restrictions-grid {
+    gap: 8px;
+  }
+
+  .restrictions-grid label {
+    padding: 8px;
+    font-size: 0.78rem;
   }
 
   .auth-alt-actions {
@@ -1984,14 +2053,6 @@ button, input {
 }
 
 @media (max-width: 700px) {
-  .discover-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .suggestions-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .footer-main {
     grid-template-columns: 1fr;
   }
@@ -2005,6 +2066,7 @@ button, input {
   .footer-columns {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+    padding-top: 10px;
   }
 
   .footer-bottom {
@@ -2020,13 +2082,11 @@ button, input {
 }
 
 @media (max-width: 900px) {
-  .discover-section,
   .how-section {
     padding-left: 20px;
     padding-right: 20px;
   }
 
-  .suggestions-grid,
   .steps-grid {
     grid-template-columns: 1fr;
   }
@@ -2149,7 +2209,7 @@ button, input {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr);
   gap: 18px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .register-fields {
@@ -2160,11 +2220,13 @@ button, input {
 
 .register-restrictions-wrap {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .restrictions-box {
   width: 100%;
+  min-width: 0;
   background: rgba(255, 247, 204, 0.06);
 }
 
@@ -2201,41 +2263,95 @@ button, input {
 
 .restrictions-box {
   margin: 0;
-  padding: 12px 14px 12px;
+  padding: 18px;
   border: 1px solid rgba(255, 247, 204, 0.75);
-  border-radius: 12px;
+  border-radius: 18px;
 }
 
 .restrictions-box legend {
+  float: none;
   width: auto;
-  margin: 0;
+  margin: 0 0 12px;
   padding: 0 4px;
   color: #FFF7CC;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .restrictions-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .restrictions-grid label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 247, 204, 0.48);
+  border-radius: 12px;
+  background: rgba(255, 247, 204, 0.09);
   color: #FFF7CC;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+
+.restrictions-grid label:hover {
+  background: rgba(255, 247, 204, 0.17);
+  border-color: #FFF7CC;
+}
+
+.restrictions-grid label:has(input:checked) {
+  background: #FFF7CC;
+  color: #188D78;
+  border-color: #FFDB57;
+}
+
+.restrictions-grid label:has(input:focus-visible) {
+  outline: 2px solid #FFDB57;
+  outline-offset: 3px;
+}
+
+.restrictions-grid input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid #FFF7CC;
+  border-radius: 6px;
+  background: transparent;
   cursor: pointer;
 }
 
-.restrictions-grid input {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  accent-color: #DE9929;
+.restrictions-grid input[type="checkbox"]:checked {
+  border-color: #188D78;
+  background: #188D78;
+}
+
+.restrictions-grid input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid #FFF7CC;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.restrictions-grid label span {
+  overflow-wrap: anywhere;
 }
 
 .auth-submit,
@@ -2342,7 +2458,7 @@ button, input {
 
 .discover-section {
   background: #FFF7CC;
-  padding: 28px 5.8vw 34px;
+  padding: 38px clamp(24px, 4.2vw, 82px) 52px;
   color: #188D78;
 }
 
@@ -2362,20 +2478,25 @@ button, input {
 .discover-intro p {
   margin: 6px 0 0;
   color: rgba(24, 141, 120, 0.8);
-  font-size: clamp(0.55rem, 0.75vw, 0.72rem);
+  font-size: clamp(0.85rem, 0.95vw, 1rem);
   font-weight: 500;
 }
 
 .discover-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(270px, 1fr);
-  gap: 26px;
-  align-items: end;
+  /* El mapa ocupa 1/3 de la sección; las tarjetas reciben más espacio. */
+  grid-template-columns: minmax(0, 0.83fr) minmax(0, 1.77fr);
+  gap: clamp(22px, 2vw, 38px);
+  align-items: stretch;
 }
 
 .map-panel {
   position: relative;
-  height: clamp(188px, 18vw, 270px);
+  width: 100%;
+  height: auto;
+  aspect-ratio: auto;
+  margin-top: 0; /* Mapa en su posición alta original */
+  align-self: stretch;
   min-height: 0;
   border: 1px solid rgba(24, 141, 120, 0.55);
   border-radius: 15px;
@@ -2386,8 +2507,8 @@ button, input {
 
 .map-search-pill {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 15px;
+  left: 15px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2396,7 +2517,7 @@ button, input {
   border: 1px solid rgba(24, 141, 120, 0.8);
   border-radius: 999px;
   color: #188D78;
-  font-size: 0.58rem;
+  font-size: 0.82rem;
   font-weight: 700;
   z-index: 2;
 }
@@ -2405,9 +2526,9 @@ button, input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
-  font-size: 0.75rem;
+  width: 18px;
+  height: 18px;
+  font-size: 1.05rem;
 }
 
 .map-surface {
@@ -2454,20 +2575,37 @@ button, input {
 .map-button {
   position: absolute;
   right: 16px;
-  bottom: 12px;
+  bottom: 16px;
   border: 1px solid rgba(24, 141, 120, 0.9);
   border-radius: 999px;
   background: #fffbe6;
   color: #188D78;
   font-weight: 700;
-  font-size: 0.58rem;
-  padding: 6px 14px;
+  font-size: 0.82rem;
+  padding: 10px 17px;
   box-shadow: 0 4px 12px rgba(24, 141, 120, 0.08);
+  cursor: pointer;
 }
 
 .discover-cards {
+  position: relative;
+  min-width: 0;
   align-self: start;
-  padding-top: 4px;
+  padding-top: 0;
+}
+
+/* El encabezado queda SOBRE las tarjetas, sin empujar el mapa hacia abajo. */
+.discover-cards > h2 {
+  position: absolute;
+  top: -66px;
+  left: 0;
+}
+
+.discover-cards > p {
+  position: absolute;
+  top: -33px;
+  left: 0;
+  margin: 0;
 }
 
 .discover-cards h2 {
@@ -2486,55 +2624,157 @@ button, input {
   font-weight: 500;
 }
 
-.suggestions-grid {
+.discover-section .suggestions-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: clamp(15px, 1.2vw, 22px);
+  align-items: stretch;
 }
 
-  .mini-card {
-    border: 2px solid #188D78;
-    background-color:#fffade;
-    border-radius: 16px;
-    min-height: 290px;
-    overflow: hidden;
-    box-shadow: 0 8px 18px rgba(24, 141, 120, 0.08);
+/* Tarjetas de "Lugares para descubrir": aisladas para no afectar Bootstrap. */
+.discover-section .mini-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 390px;
+  overflow: hidden;
+  border: 2px solid #188D78;
+  border-radius: 16px;
+  background: #fffade;
+  box-shadow: 0 8px 18px rgba(24, 141, 120, 0.08);
+}
+
+.discover-section .mini-card .card-photo {
+  position: relative;
+  flex-shrink: 0;
+  height: clamp(215px, 13vw, 260px);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(24, 141, 120, 0.7);
+  background-color: #F7F1DE;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.discover-section .mini-card .card-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Contain mantiene la fotografía entera, aunque deje márgenes a los costados. */
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Si la foto contiene una etiqueta de restricción, es una píldora compacta.
+   No debe ocupar media tarjeta ni tapar el título. */
+.discover-section .mini-card .card-photo > span,
+.discover-section .mini-card .card-photo > .badge,
+.discover-section .mini-card .card-photo > .tag {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  bottom: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: calc(100% - 24px);
+  min-width: 0;
+  height: auto;
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid #188D78;
+  border-radius: 999px;
+  background: #FFF7CC;
+  color: #188D78;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+
+.discover-section .mini-card .card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 19px 19px 23px;
+  background: #fffade;
+  color: #188D78;
+  text-align: left;
+}
+
+.discover-section .mini-card .card-body h3 {
+  margin: 0 0 8px;
+  color: #188D78;
+  font-size: clamp(18px, 1.18vw, 22px);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.discover-section .mini-card .card-body p {
+  margin: 0;
+  color: rgba(24, 141, 120, 0.87);
+  font-size: clamp(14px, 0.86vw, 17px);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Distribución adaptable de la sección Descubrí (sin modificar otras páginas). */
+@media (max-width: 1250px) {
+  .discover-layout {
+    grid-template-columns: 1fr;
   }
 
-  .card-photo {
-    height: 170px;
-    background-size: cover;
-    background-position: center;
-    border-bottom: 1px solid rgba(24, 141, 120, 0.7);
+  .discover-cards > h2,
+  .discover-cards > p {
+    position: static;
   }
 
-  .card-photo img {
-    display: block;
+  .discover-cards > p {
+    margin: 5px 0 14px;
+  }
+
+  .map-panel {
+    width: min(100%, 570px);
+    height: auto;
+    aspect-ratio: 1.12 / 1;
+    margin-top: 0;
+    align-self: auto;
+  }
+
+  .discover-section .mini-card .card-photo {
+    height: clamp(210px, 23vw, 255px);
+  }
+}
+
+@media (max-width: 800px) {
+  .discover-section {
+    padding: 30px 5% 38px;
+  }
+
+  .discover-section .suggestions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .discover-section .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .discover-section .mini-card .card-photo {
+    height: 230px;
+  }
+
+  .discover-section .mini-card {
+    min-height: 0;
+  }
+
+  .map-panel {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
-
-  .card-body {
-    padding: 14px 14px 16px;
-    text-align: left;
-    color: #188D78;
-  }
-
-  .card-body h3 {
-    margin: 0 0 8px;
-    font-size: clamp(1rem, 1.1vw, 1.2rem);
-    line-height: 1.2;
-    font-weight: 700;
-  }
-
-  .card-body p {
-    margin: 0;
-    color: rgba(24, 141, 120, 0.82);
-    font-size: clamp(0.74rem, 0.82vw, 0.9rem);
-    line-height: 1.5;
-    font-weight: 500;
-  }
+}
 
   .how-section {
     background: #188D78;
@@ -2696,10 +2936,3 @@ button, input {
     font-size: 0.75rem;
     font-weight: 700;
   }
-
-.header-section-link:hover,
-.header-section-link:focus-visible {
-  background: #e4f3ef;
-  color: #078f7d;
-  outline: none;
-}
