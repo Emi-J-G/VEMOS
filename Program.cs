@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,15 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "";
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
+    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Events.OnRemoteFailure = context =>
+    {
+        var message = Uri.EscapeDataString("No se pudo completar el inicio de sesión con Google. Volvé a intentarlo.");
+        context.Response.Redirect($"/?mensaje={message}");
+        context.HandleResponse();
+        return Task.CompletedTask;
+    };
     options.Events.OnCreatingTicket = context =>
     {
         var principal = context.Principal;

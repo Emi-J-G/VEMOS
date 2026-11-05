@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Ajustes";
+}
+
+<section class="settings-page figma-settings-page" aria-labelledby="settings-title">
+    <div class="settings-banner">
+        <div class="settings-banner-icon">
+            <img src="~/Logos/ajustes.png" alt="" aria-hidden="true" />
+        </div>
+        <div>
+            <p class="profile-kicker">V.E.M.O.S. / Mi cuenta</p>
+            <h1 id="settings-title">Configuración</h1>
+            <p>Personalizá tu experiencia en VEMOS.</p>
+        </div>
+        <a class="settings-banner-action" href="#preferencias">Guardar cambios</a>
+    </div>
+
+    <div class="settings-layout">
+        <aside class="settings-menu" aria-label="Secciones de ajustes">
+            <p class="settings-menu-title">Ajustes</p>
+            <a class="is-active" href="#preferencias"><img src="~/Logos/filtro.png" alt="" /> Preferencias</a>
+            <a href="#cuenta"><img src="~/Logos/perfil.png" alt="" /> Cuenta</a>
+            <a href="#notificaciones"><img src="~/Logos/Msj.png" alt="" /> Notificaciones</a>
+            <a href="#privacidad"><img src="~/Logos/Importante.png" alt="" /> Privacidad</a>
+            <a class="settings-menu-back" href="/Home/Home">← Volver al inicio</a>
+        </aside>
+
+        <div class="settings-content">
+            <section class="settings-card" id="preferencias">
+                <div class="settings-card-heading">
+                    <div>
+                        <p class="profile-kicker">Descubrí lugares para vos</p>
+                        <h2>Preferencias alimentarias</h2>
+                    </div>
+                    <span class="settings-status">Guardado</span>
+                </div>
+                <p>Elegí las opciones que querés priorizar al explorar restaurantes y platos.</p>
+                <div class="settings-options">
+                    <label><input type="checkbox" checked /> <span>Sin TACC / Celiaquía</span></label>
+                    <label><input type="checkbox" checked /> <span>Vegetariano</span></label>
+                    <label><input type="checkbox" /> <span>Vegano</span></label>
+                    <label><input type="checkbox" /> <span>Sin lactosa</span></label>
+                </div>
+                <button type="button" class="settings-primary-button">Guardar preferencias</button>
+            </section>
+
+            <section class="settings-card" id="cuenta">
+                <div class="settings-card-heading">
+                    <div>
+                        <p class="profile-kicker">Tu información</p>
+                        <h2>Información de tu cuenta</h2>
+                    </div>
+                    <a href="/Options/Perfil" class="profile-text-button">Ver perfil</a>
+                </div>
+                <a class="settings-account-row" href="/Options/Perfil"><img src="~/Logos/perfil.png" alt="" /><span>Datos personales y nombre visible</span><strong>Editar →</strong></a>
+                <a class="settings-account-row" href="/Buscar?filtro=favoritos"><img src="~/Logos/estrellaFav.png" alt="" /><span>Lugares y favoritos guardados</span><strong>Ver →</strong></a>
+            </section>
+
+            <section class="settings-card" id="notificaciones">
+                <div class="settings-card-heading">
+                    <div>
+                        <p class="profile-kicker">Siempre al tanto</p>
+                        <h2>Notificaciones</h2>
+                    </div>
+                </div>
+                <div class="settings-toggle-list">
+                    <label><span><strong>Novedades y recomendaciones</strong><small>Recibí sugerencias según tus preferencias.</small></span><input type="checkbox" checked /></label>
+                    <label><span><strong>Actividad de tus amigos</strong><small>Enterate cuando compartan un lugar.</small></span><input type="checkbox" /></label>
+                </div>
+            </section>
+
+            <section class="settings-card settings-danger-card" id="privacidad">
+                <div>
+                    <p class="profile-kicker">Tu tranquilidad</p>
+                    <h2>Privacidad y seguridad</h2>
+                    <p>Administrá cómo se utiliza tu información dentro de la aplicación.</p>
+                </div>
+                <a href="/Options/Reportar" class="profile-text-button">Reportar un problema</a>
+            </section>
+        </div>
+    </div>
+</section>

@@ -164,6 +164,14 @@ public class HomeController : Controller
         return View(restaurante);
     }
 
+    [HttpGet("/Buscar")]
+    public IActionResult Buscar(string q, string filtro)
+    {
+        ViewBag.Query = q?.Trim() ?? string.Empty;
+        ViewBag.Filtro = filtro ?? string.Empty;
+        return View();
+    }
+
     public IActionResult Privacy()
     {
         return View();

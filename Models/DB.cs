@@ -4,7 +4,7 @@ using Dapper;
 using VEMOS.Models;
 public class DB
 {
-    string _connectionString = @"Server=localhost;DataBase=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
+    string _connectionString = @"Server=localhost\SQLEXPRESS;Database=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
 
     private static readonly Dictionary<string, (double lat, double lng)> CoordenadasRestaurantes =
         new(StringComparer.OrdinalIgnoreCase)
@@ -195,4 +195,63 @@ public class DB
             return usuario;
         }
     }
-}
+
+    public void ActualizarUsuario(Usuario usuario)
+        {
+            const string query = @"UPDATE Usuarios
+                                   SET username = @username,
+                                       nombre = @nombre,
+                                       apellido = @apellido,
+                                       email = @email
+                                   WHERE id = @id";
+
+            using var connection = new SqlConnection(_connectionString);
+            connection.Execute(query, new
+            {
+                usuario.id,
+                usuario.username,
+                usuario.nombre,
+                usuario.apellido,
+                usuario.email
+            });
+        }
+
+    public List<Usuario> ObtenerAmigos(int idUsuario)
+        {
+            const string query = @"SELECT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo
+                                   FROM Amigos a
+                                   INNER JOIN Usuarios u ON u.id =
+                                       CASE WHEN a.idUsuarioA = @idUsuario THEN a.idUsuarioB ELSE a.idUsuarioA END
+                                   WHERE a.idUsuarioA = @idUsuario OR a.idUsuarioB = @idUsuario
+                                   ORDER BY u.nombre, u.apellido";
+
+            using var connection = new SqlConnection(_connectionString);
+            return connection.Query<Usuario>(query, new { idUsuario }).ToList();
+        }
+
+    public bool AgregarAmigo(int idUsuario, string identificador)
+        {
+            const string query = @"DECLARE @idAmigo int;
+                                   SELECT TOP 1 @idAmigo = id
+                                   FROM Usuarios
+                                   WHERE username = @identificador OR email = @identificador;
+
+                                   IF @idAmigo IS NULL OR @idAmigo = @idUsuario
+                                       SELECT CAST(0 AS bit);
+                                   ELSE IF EXISTS (
+                                       SELECT 1 FROM Amigos
+                                       WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
+                                          OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)
+                                   )
+                                       SELECT CAST(0 AS bit);
+                                   ELSE
+                                   BEGIN
+                                       INSERT INTO Amigos (idUsuarioA, idUsuarioB)
+                                       VALUES (@idUsuario, @idAmigo);
+                                       SELECT CAST(1 AS bit);
+                                   END";
+
+            using var connection = new SqlConnection(_connectionString);
+            return connection.ExecuteScalar<bool>(query, new { idUsuario, identificador = identificador.Trim() });
+        }
+    }

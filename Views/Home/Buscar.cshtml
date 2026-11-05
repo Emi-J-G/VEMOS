@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Buscar";
+    var query = ViewBag.Query as string ?? string.Empty;
+    var filtro = ViewBag.Filtro as string ?? string.Empty;
+}
+
+<section class="search-page" aria-labelledby="search-title">
+    <div class="search-page-header">
+        <div>
+            <p class="profile-kicker">Descubrí algo nuevo</p>
+            <h1 id="search-title">Buscá restaurantes y platos</h1>
+            <p>Encontrá opciones que se adapten a vos y a quienes te acompañan.</p>
+        </div>
+        <img src="~/Logos/busqueda.png" alt="" aria-hidden="true" />
+    </div>
+
+    <form class="search-page-form" action="/Buscar" method="get" role="search">
+        <img src="~/Logos/busqueda.png" alt="" aria-hidden="true" />
+        <input type="search" name="q" value="@query" placeholder="Buscar por nombre, barrio o plato..." aria-label="Buscar por nombre, barrio o plato" autofocus />
+        <button type="submit">Buscar</button>
+    </form>
+
+    <div class="search-page-toolbar">
+        <strong>@(string.IsNullOrWhiteSpace(query) ? "Lugares para descubrir" : $"Resultados para “{query}”")</strong>
+        <div class="search-page-filters"><button type="button" class="is-active">Todos</button><button type="button">Sin TACC</button><button type="button">Vegetariano</button><button type="button">Favoritos</button></div>
+    </div>
+
+    <div class="search-results-grid">
+        <article class="search-result-card"><div class="search-result-image"><img src="~/Images/Arturito.jpg" alt="Interior de restaurante" /><span>★ 4.9</span></div><div class="search-result-body"><p class="search-result-type">Cocina saludable · Palermo</p><h2>Verde &amp; Sabor Bistro</h2><p>Opciones sin TACC, vegetarianas y platos de estación.</p><div><span>Sin TACC</span><span>Vegetariano</span></div><a href="/Home/Mapa">Ver ficha →</a></div></article>
+        <article class="search-result-card"><div class="search-result-image"><img src="~/Images/plato-3.png" alt="Plato sin gluten" /><span>★ 4.8</span></div><div class="search-result-body"><p class="search-result-type">Cocina italiana · Recoleta</p><h2>La Huella Sin Gluten</h2><p>Pastas y platos caseros para disfrutar sin preocupaciones.</p><div><span>Sin TACC</span><span>Sin lactosa</span></div><a href="/Home/Mapa">Ver ficha →</a></div></article>
+        <article class="search-result-card"><div class="search-result-image"><img src="~/Images/plato-1.png" alt="Plato vegetariano" /><span>★ 4.7</span></div><div class="search-result-body"><p class="search-result-type">Cocina japonesa · Belgrano</p><h2>Sintacc Sushi Lab</h2><p>Propuestas frescas con alternativas vegetarianas.</p><div><span>Vegetariano</span><span>Favorito</span></div><a href="/Home/Mapa">Ver ficha →</a></div></article>
+    </div>
+</section>

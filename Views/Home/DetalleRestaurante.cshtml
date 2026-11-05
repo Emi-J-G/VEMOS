@@ -11,9 +11,16 @@
 
     <article class="restaurant-detail-card">
         <div class="restaurant-detail-hero">
-            <div class="restaurant-detail-badge">@Model.tipo</div>
-            <h1>@Model.nombre</h1>
-            <p>@Model.descripcion</p>
+            <div class="restaurant-detail-image">
+                <img src="~/Images/Arturito.jpg" alt="Interior de @Model.nombre" />
+                <span class="restaurant-detail-photo-tag">★ Recomendado por la comunidad</span>
+            </div>
+            <div class="restaurant-detail-hero-copy">
+                <div class="restaurant-detail-badge">@Model.tipo</div>
+                <h1>@Model.nombre</h1>
+                <p>@Model.descripcion</p>
+                <div class="restaurant-detail-meta"><span>★ 4.8</span><span>•</span><span>Palermo, Buenos Aires</span></div>
+            </div>
         </div>
 
         <div class="restaurant-detail-content">
@@ -42,6 +49,10 @@
                         }
                     </div>
                 </div>
+                <div class="detail-item">
+                    <span class="detail-label">Horarios</span>
+                    <strong>Lun a dom · 12:00 a 23:30</strong>
+                </div>
             </div>
 
             <div class="restaurant-detail-actions">
@@ -50,4 +61,14 @@
             </div>
         </div>
     </article>
+
+    <section class="restaurant-detail-section" aria-labelledby="restaurant-menu-title">
+        <p class="profile-kicker">Una probadita</p>
+        <h2 id="restaurant-menu-title">Platos destacados</h2>
+        <p>Descubrí opciones que se adaptan a tus preferencias.</p>
+        <div class="restaurant-dishes">
+            <article><img src="~/Images/plato-3.png" alt="Plato destacado" /><strong>Bowls de temporada</strong><span>Sin TACC</span></article>
+            <article><img src="~/Images/plato-1.png" alt="Plato destacado" /><strong>Ensalada fresca</strong><span>Vegetariano</span></article>
+        </div>
+    </section>
 </section>

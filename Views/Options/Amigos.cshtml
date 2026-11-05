@@ -1,0 +1,82 @@
+@{
+    ViewData["Title"] = "Familia y Amigos";
+    var amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+}
+
+<section class="friends-page" aria-labelledby="friends-title">
+    <div class="friends-header">
+        <div>
+            <p class="profile-kicker">Comunidad</p>
+            <h1 id="friends-title">Familia y amigos</h1>
+            <p>Creá grupos para encontrar lugares que funcionen para todos.</p>
+        </div>
+        <button type="button" class="friends-primary-button">+ Crear grupo</button>
+    </div>
+
+    <div class="friends-summary">
+        <div class="friends-summary-icon"><img src="~/Logos/dobleHoja.png" alt="" /></div>
+        <div><strong>Elegir juntos es más fácil</strong><span>Compartí preferencias y descubrí restaurantes seguros para tu grupo.</span></div>
+        <a href="/Buscar">Explorar lugares →</a>
+    </div>
+
+    @if (TempData["AmigosMensaje"] is string mensaje)
+    {
+        <div class="profile-feedback" role="status">@mensaje</div>
+    }
+
+    <div class="friends-grid">
+        <section class="friends-groups-card">
+            <div class="friends-section-heading"><div><p class="profile-kicker">Tus grupos</p><h2>Mis grupos habituales</h2></div><span>2 grupos</span></div>
+            <article class="friends-group-card">
+                <div class="friends-group-top"><div class="friends-group-avatar">✦</div><span>Habitual</span></div>
+                <h3>Los del viernes</h3>
+                <p>4 integrantes · Preferencias mixtas</p>
+                <div class="friends-members"><span>MG</span><span>LC</span><span>JF</span><span>+1</span></div>
+                <a href="#grupo-viernes">Ver grupo <span aria-hidden="true">→</span></a>
+            </article>
+            <article class="friends-group-card">
+                <div class="friends-group-top"><div class="friends-group-avatar">♡</div><span>Familia</span></div>
+                <h3>Familia G.</h3>
+                <p>6 integrantes · Opciones seguras</p>
+                <div class="friends-members"><span>AG</span><span>MG</span><span>+4</span></div>
+                <a href="#grupo-familia">Ver grupo <span aria-hidden="true">→</span></a>
+            </article>
+        </section>
+
+        <section class="friends-invite-card">
+            <img src="~/Logos/Msj.png" alt="" />
+            <p class="profile-kicker">Compartí V.E.M.O.S.</p>
+            <h2>Invitá a alguien a tu grupo</h2>
+            <p>Sumá personas para comparar restricciones y encontrar un lugar que les guste a todos.</p>
+            <form class="friends-invite-form" method="post" action="/FamiliaAmigos/Agregar">
+                <label for="invite-email">Usuario o correo electrónico</label>
+                <div><input id="invite-email" name="identificador" type="text" placeholder="usuario@correo.com" required /><button type="submit">Agregar</button></div>
+            </form>
+        </section>
+    </div>
+
+    <section class="friends-list-card" aria-labelledby="friends-list-title">
+        <div class="friends-section-heading">
+            <div><p class="profile-kicker">Tu red</p><h2 id="friends-list-title">Amigos agregados</h2></div>
+            <span>@amigos.Count() personas</span>
+        </div>
+        @if (amigos.Any())
+        {
+            <div class="friends-list">
+                @foreach (var amigo in amigos)
+                {
+                    var nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    <div class="friend-list-item">
+                        <div class="friend-list-avatar">@((string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo).Trim()[0].ToString().ToUpperInvariant())</div>
+                        <div><strong>@(string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo)</strong><span>@@@amigo.username</span></div>
+                        <a href="/Buscar">Ver opciones juntos →</a>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="friends-empty">Todavía no agregaste amigos. Usá el formulario para sumar a alguien por usuario o correo.</p>
+        }
+    </section>
+</section>

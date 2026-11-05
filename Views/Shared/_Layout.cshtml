@@ -27,28 +27,28 @@
             </a>
 
 
-            <form class="search-form" action="/Buscar" method="get" role="search">
+            <form class="search-form" action="/Buscar" method="get" role="search" data-search-page="/Buscar" aria-label="Abrir búsqueda">
                 <span class="search-icon"><img src="~/Logos/busqueda.png" alt="Buscar" /></span>
-                <input id="site-search" name="q" type="search" class="search-input" placeholder="Buscar restaurantes o platos" aria-label="Buscar restaurantes o platos" />
+                <input id="site-search" name="q" type="search" class="search-input" placeholder="Buscar restaurantes o platos" aria-label="Buscar restaurantes o platos" readonly onfocus="window.location.assign('/Buscar');" />
                 <button type="submit" class="search-button" aria-label="Buscar"></button>
             </form>
             @if (!string.IsNullOrWhiteSpace(usuario))
             {
                 <nav class="user-header-actions" aria-label="Navegación de usuario">
                     <a href="/Home/Home" class="header-nav-link header-home-link">
-                        <span class="header-nav-icon header-home-icon" aria-hidden="true"></span>
+                        <img class="header-nav-icon" src="~/Logos/home.png" alt="" aria-hidden="true" />
                         <span>Inicio</span>
                     </a>
                     <a href="/Mapa" class="header-nav-link">
-                        <span class="header-nav-icon header-map-icon" aria-hidden="true"></span>
+                        <img class="header-nav-icon" src="~/Logos/mapa.png" alt="" aria-hidden="true" />
                         <span>Mapa</span>
                     </a>
-                    <a href="/Restaurantes" class="header-nav-link">
-                        <span class="header-nav-icon header-restaurant-icon" aria-hidden="true"></span>
+                    <a href="/Buscar" class="header-nav-link">
+                        <img class="header-nav-icon" src="~/Logos/cubiertos.png" alt="" aria-hidden="true" />
                         <span>Restaurantes</span>
                     </a>
-                    <a href="/Favoritos" class="header-nav-link">
-                        <span class="header-nav-icon header-favorite-icon" aria-hidden="true"></span>
+                    <a href="/Buscar?filtro=favoritos" class="header-nav-link">
+                        <img class="header-nav-icon" src="~/Logos/estrellaFav.png" alt="" aria-hidden="true" />
                         <span>Favoritos</span>
                     </a>
                     <div class="profile-dropdown dropdown">
@@ -58,7 +58,7 @@
                         <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu" aria-labelledby="profileMenuButton">
                             <li><a class="dropdown-item" href="/Options/Perfil">Mi perfil</a></li>
                             <li><a class="dropdown-item" href="/Options/Ajustes">Ajustes</a></li>
-                            <li><a class="dropdown-item" href="/Options/Amigos">Familia y Amigos</a></li>
+                            <li><a class="dropdown-item" href="/FamiliaAmigos">Familia y Amigos</a></li>
                             <li><button type="button" class="dropdown-item auth-popup-trigger report-popup-trigger" data-auth-modal="report-modal">Reportar un problema</button></li>
                             <li><hr class="dropdown-divider" /></li>
                             <li>

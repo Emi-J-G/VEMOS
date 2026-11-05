@@ -40,7 +40,7 @@
         </p>
 
         <div class="active-filters">
-            <strong>Tus filtros activos <span aria-hidden="true">·</span> ejemplo</strong>
+            <strong>Tus filtros activos</strong>
             <div class="filter-chips">
                 @foreach (Restriccion restriccion in filtrosActivos)
                 {
@@ -145,11 +145,11 @@
             <span class="quick-access-icon" aria-hidden="true">⌑</span>
             <span><strong>Abrir el mapa</strong><small>Explorá lugares cerca tuyo.</small></span>
         </a>
-        <a class="quick-access-card" href="/Favoritos">
+        <a class="quick-access-card" href="/Buscar?filtro=favoritos">
             <span class="quick-access-icon" aria-hidden="true">♡</span>
             <span><strong>Mis favoritos</strong><small>Volvé a los lugares que guardaste.</small></span>
         </a>
-        <a class="quick-access-card" href="/Reseñas">
+        <a class="quick-access-card" href="/Buscar">
             <span class="quick-access-icon" aria-hidden="true">☆</span>
             <span><strong>Reseñas</strong><small>Consultá experiencias compartidas.</small></span>
         </a>
@@ -172,7 +172,7 @@
             <div class="community-card-content">
                 <h3>Tus lugares guardados</h3>
                 <p>Cuando marques un restaurante como favorito, vas a poder encontrarlo rápidamente desde acá.</p>
-                <a href="/Favoritos">Ver mis favoritos <span aria-hidden="true">→</span></a>
+                <a href="/Buscar?filtro=favoritos">Ver mis favoritos <span aria-hidden="true">→</span></a>
             </div>
         </article>
 
@@ -181,7 +181,7 @@
             <div class="community-card-content">
                 <h3>Compartí tu experiencia</h3>
                 <p>Leé reseñas de otros usuarios y ayudá a la comunidad compartiendo lo que encontraste.</p>
-                <a href="/Reseñas">Explorar reseñas <span aria-hidden="true">→</span></a>
+                <a href="/Buscar">Explorar lugares <span aria-hidden="true">→</span></a>
             </div>
         </article>
     </div>
@@ -194,4 +194,3 @@
         <p>Los filtros y las reseñas ayudan a buscar. Si tenés alergias o celiaquía, confirmá siempre los ingredientes y la preparación con el restaurante.</p>
     </div>
 </section>
-

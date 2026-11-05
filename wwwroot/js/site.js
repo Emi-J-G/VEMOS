@@ -58,6 +58,13 @@ function validateRegisterForm() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-search-page]').forEach(function (searchBar) {
+        searchBar.addEventListener('click', function (event) {
+            event.preventDefault();
+            window.location.assign(searchBar.getAttribute('data-search-page') || '/Buscar');
+        });
+    });
+
     const modalLogin = document.getElementById('login-modal');
     const modalRegister = document.getElementById('register-modal');
     const modalReport = document.getElementById('report-modal');

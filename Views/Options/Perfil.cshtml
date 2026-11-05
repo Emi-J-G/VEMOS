@@ -3,16 +3,130 @@
 @{
     ViewData["Title"] = "Perfil";
     var usuario = Model;
+    var nombre = string.Join(" ", new[] { usuario?.nombre, usuario?.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    var inicial = !string.IsNullOrWhiteSpace(nombre) ? nombre.Trim()[0].ToString().ToUpperInvariant() : "U";
+    var restricciones = usuario?.restricciones?.Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre)).ToList() ?? new List<VEMOS.Models.Restriccion>();
 }
 
-<body>
-    <section class = "username">
-        <h1>Bienvenido, @(usuario?.username ?? "Usuario")</h1>
-    </section>
+<section class="profile-page" aria-labelledby="profile-title">
+    <div class="profile-summary">
+        <div class="profile-avatar-large" aria-hidden="true">@inicial</div>
+        <div class="profile-summary-copy">
+            <p class="profile-kicker">Mi perfil</p>
+            <h1 id="profile-title">@(string.IsNullOrWhiteSpace(nombre) ? "Tu perfil" : nombre)</h1>
+            <p class="profile-handle">@@@(usuario?.username ?? "usuario") <span>• Cuenta @(usuario?.tipo ?? "Cliente")</span></p>
+            <p class="profile-location">Argentina <span aria-hidden="true">•</span> Preferencias alimentarias personalizadas</p>
+        </div>
+        <a class="profile-edit-link" href="#editar-perfil">Editar perfil</a>
+    </div>
 
-    <section class="user-info">
-        <h2>Información del usuario</h2>
-        <p><strong>Nombre completo:</strong> @(usuario?.nombre ?? "-")</p>
-        <p><strong>Email:</strong> @(usuario?.email ?? "-")</p>
-    </section>
-</body>
+    @if (TempData["PerfilMensaje"] is string mensaje)
+    {
+        <div class="profile-feedback" role="status">@mensaje</div>
+    }
+
+    <details class="profile-edit-card" id="editar-perfil">
+        <summary><span><span class="profile-kicker">Tu información</span><strong id="edit-profile-title">Editá tu perfil</strong></span><span class="profile-edit-summary">Abrir editor ↓</span></summary>
+        <form class="profile-edit-form" method="post" action="/Options/Perfil/Editar">
+            <label>Usuario<input name="username" value="@usuario?.username" required /></label>
+            <label>Nombre<input name="nombre" value="@usuario?.nombre" required /></label>
+            <label>Apellido<input name="apellido" value="@usuario?.apellido" required /></label>
+            <label>Correo electrónico<input type="email" name="email" value="@usuario?.email" required /></label>
+            <button type="submit" class="settings-primary-button">Guardar cambios</button>
+        </form>
+    </details>
+
+    <div class="profile-preferences" aria-label="Preferencias alimentarias">
+        <div class="profile-preferences-heading">
+            <div>
+                <p class="profile-kicker">Tus preferencias activas</p>
+                <h2>Lo que te importa al elegir</h2>
+            </div>
+            <span class="profile-preferences-count">@restricciones.Count activas</span>
+        </div>
+        <div class="profile-chip-list">
+            @if (restricciones.Count > 0)
+            {
+                foreach (var restriccion in restricciones)
+                {
+                    <span class="profile-chip"><span aria-hidden="true">✓</span> @restriccion.nombre</span>
+                }
+            }
+            else
+            {
+                <span class="profile-empty-preferences">Todavía no agregaste restricciones.</span>
+            }
+        </div>
+    </div>
+
+    <div class="profile-content-grid">
+        <section class="profile-groups-card" aria-labelledby="groups-title">
+            <div class="profile-section-heading">
+                <div>
+                    <p class="profile-kicker">Comunidad</p>
+                    <h2 id="groups-title">Mis grupos habituales</h2>
+                </div>
+                <button type="button" class="profile-text-button">Crear</button>
+            </div>
+            <article class="profile-group-row">
+                <div class="profile-group-icon"><img src="~/Logos/dobleHoja.png" alt="" /></div>
+                <div>
+                    <h3>Los del viernes</h3>
+                    <p>4 personas • Preferencias mixtas</p>
+                    <a href="/Options/Amigos">Ver grupo <span aria-hidden="true">→</span></a>
+                </div>
+                <span class="profile-group-tag">Habitual</span>
+            </article>
+            <article class="profile-group-row">
+                <div class="profile-group-icon"><img src="~/Logos/perfil.png" alt="" /></div>
+                <div>
+                    <h3>Familia G.</h3>
+                    <p>6 personas • Opciones seguras</p>
+                    <a href="/Options/Amigos">Ver grupo <span aria-hidden="true">→</span></a>
+                </div>
+                <span class="profile-group-tag">Familia</span>
+            </article>
+            <a class="profile-invite-link" href="/Options/Amigos">+ Invitar amigos o gestionar grupos</a>
+        </section>
+
+        <section class="profile-favorites-card" aria-labelledby="favorites-title">
+            <div class="profile-section-heading">
+                <div>
+                    <p class="profile-kicker">Guardados</p>
+                    <h2 id="favorites-title">Mis restaurantes favoritos</h2>
+                </div>
+                <a class="profile-text-button" href="/Mapa">Ver todos</a>
+            </div>
+            <div class="profile-favorite-list">
+                <article class="profile-favorite-item">
+                    <img src="~/Images/Arturito.jpg" alt="Interior de restaurante" />
+                    <div>
+                        <h3>Verde &amp; Sabor Bistro</h3>
+                        <p>Palermo • Cocina saludable</p>
+                        <span class="profile-rating">★ 4.9</span>
+                    </div>
+                    <a href="/Home/Mapa" aria-label="Ver Verde y Sabor Bistro">Ver ficha <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="profile-favorite-item">
+                    <img src="~/Images/plato-2.png" alt="Plato de restaurante" />
+                    <div>
+                        <h3>La Huella Sin Gluten</h3>
+                        <p>Recoleta • Opciones sin TACC</p>
+                        <span class="profile-rating">★ 4.8</span>
+                    </div>
+                    <a href="/Home/Mapa" aria-label="Ver La Huella Sin Gluten">Ver ficha <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="profile-favorite-item">
+                    <img src="~/Images/plato-1.png" alt="Plato vegetariano" />
+                    <div>
+                        <h3>Sintacc Sushi Lab</h3>
+                        <p>Belgrano • Cocina japonesa</p>
+                        <span class="profile-rating">★ 4.7</span>
+                    </div>
+                    <a href="/Home/Mapa" aria-label="Ver Sintacc Sushi Lab">Ver ficha <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <a class="profile-map-prompt" href="/Home/Mapa">¿Querés descubrir nuevos lugares seguros para vos? <span>Explorar en mapa →</span></a>
+        </section>
+    </div>
+</section>
