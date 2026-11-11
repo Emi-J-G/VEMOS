@@ -12,5 +12,6 @@ public class Restaurante
     public double lng { get; set; }
     public List<string> restricciones { get; set; } = new();
     public List<Plato> platos { get; set; }
+    public string foto { get; set; }
     public int idUsuario { get; set; }
 }

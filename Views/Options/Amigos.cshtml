@@ -1,6 +1,8 @@
 @{
     ViewData["Title"] = "Familia y Amigos";
     var amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    var resultadosBusqueda = ViewBag.ResultadosBusqueda as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    var busqueda = ViewBag.Busqueda as string ?? string.Empty;
 }
 
 <section class="friends-page" aria-labelledby="friends-title">
@@ -48,12 +50,68 @@
             <p class="profile-kicker">Compartí V.E.M.O.S.</p>
             <h2>Invitá a alguien a tu grupo</h2>
             <p>Sumá personas para comparar restricciones y encontrar un lugar que les guste a todos.</p>
-            <form class="friends-invite-form" method="post" action="/FamiliaAmigos/Agregar">
+            <form class="friends-invite-form" id="friends-invite-form" method="post" action="/Options/Amigos/AgregarFetch">
                 <label for="invite-email">Usuario o correo electrónico</label>
                 <div><input id="invite-email" name="identificador" type="text" placeholder="usuario@correo.com" required /><button type="submit">Agregar</button></div>
             </form>
+            <p id="friends-fetch-message" class="profile-feedback" hidden></p>
         </section>
+
+        <script>
+            document.getElementById('friends-invite-form')?.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const message = document.getElementById('friends-fetch-message');
+                const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+                const data = await response.json();
+                message.textContent = data.message || 'No se pudo completar la acción.';
+                message.hidden = false;
+                if (response.ok) {
+                    form.reset();
+                    setTimeout(() => window.location.reload(), 500);
+                }
+            });
+        </script>
     </div>
+
+    <section class="friends-list-card friends-search-card" aria-labelledby="search-users-title">
+        <div class="friends-section-heading">
+            <div><p class="profile-kicker">Encontrá personas</p><h2 id="search-users-title">Buscar perfiles</h2></div>
+        </div>
+        <form class="friends-user-search-form" method="get" action="/Options/Usuarios/Buscar">
+            <label for="user-search">Usuario, nombre o correo</label>
+            <div><input id="user-search" name="q" value="@busqueda" placeholder="Ej. Martina o martina@mail.com" required /><button type="submit">Buscar</button></div>
+        </form>
+        @if (!string.IsNullOrWhiteSpace(busqueda) && !resultadosBusqueda.Any())
+        {
+            <p class="friends-empty">No encontramos perfiles para esa búsqueda.</p>
+        }
+        else if (resultadosBusqueda.Any())
+        {
+            <div class="friends-list friends-search-results">
+                @foreach (var resultado in resultadosBusqueda)
+                {
+                    var nombreResultado = string.Join(" ", new[] { resultado.nombre, resultado.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    var inicialResultado = !string.IsNullOrWhiteSpace(resultado.username) ? resultado.username.Trim()[0].ToString().ToUpperInvariant() : "U";
+                    <div class="friend-list-item">
+                        @if (!string.IsNullOrWhiteSpace(resultado.foto))
+                        {
+                            var fotoResultado = resultado.foto.StartsWith("/", StringComparison.Ordinal) || resultado.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                                ? resultado.foto
+                                : Url.Content($"~/Images/{resultado.foto}");
+                            <img class="friend-list-avatar friend-list-photo" src="@fotoResultado" alt="Foto de @resultado.username" />
+                        }
+                        else
+                        {
+                            <div class="friend-list-avatar">@inicialResultado</div>
+                        }
+                        <div><strong>@(string.IsNullOrWhiteSpace(nombreResultado) ? resultado.username : nombreResultado)</strong><span>@@@resultado.username</span></div>
+                        <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(resultado.username)">Ver perfil →</a>
+                    </div>
+                }
+            </div>
+        }
+    </section>
 
     <section class="friends-list-card" aria-labelledby="friends-list-title">
         <div class="friends-section-heading">

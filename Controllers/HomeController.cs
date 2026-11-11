@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using VEMOS.Models;
 
@@ -80,7 +81,7 @@ public class HomeController : Controller
         };
     }
 
-    public IActionResult Index(string mensaje)
+    public IActionResult Index(string mensaje, bool abrirRegistro = false)
     {
         if (!string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
         {
@@ -89,6 +90,7 @@ public class HomeController : Controller
         ViewBag.Usuario = HttpContext.Session.GetString("Usuario");
         ViewBag.NombreCompleto = HttpContext.Session.GetString("NombreCompleto");
         ViewBag.Mensaje = mensaje;
+        ViewBag.AbrirRegistro = abrirRegistro;
         return View();
     }
 
@@ -146,7 +148,8 @@ public class HomeController : Controller
             return RedirectToAction("Index");
         }
 
-        var restaurantes = new DB().GetRestaurantes();
+        var db = new DB();
+        var restaurantes = db.GetRestaurantes();
         var restaurante = restaurantes
             .FirstOrDefault(r => string.Equals(r.nombre, nombre, StringComparison.OrdinalIgnoreCase));
 
@@ -161,6 +164,13 @@ public class HomeController : Controller
             return NotFound();
         }
 
+        var datosUsuario = HttpContext.Session.GetString("UsuarioActual");
+        var usuario = string.IsNullOrWhiteSpace(datosUsuario)
+        ? null
+        : JsonSerializer.Deserialize<Usuario>(datosUsuario);
+        ViewBag.EsFavorito = usuario != null &&
+        db.ObtenerIdsRestaurantesFavoritos(usuario.id).Contains(restaurante.id);
+
         return View(restaurante);
     }
 
@@ -169,7 +179,17 @@ public class HomeController : Controller
     {
         ViewBag.Query = q?.Trim() ?? string.Empty;
         ViewBag.Filtro = filtro ?? string.Empty;
-        return View();
+        var restaurantes = new DB().GetRestaurantes();
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            restaurantes = restaurantes
+                .Where(r => (r.nombre ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase)
+                    || (r.direccion ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase)
+                    || (r.descripcion ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        return View(restaurantes);
     }
 
     public IActionResult Privacy()

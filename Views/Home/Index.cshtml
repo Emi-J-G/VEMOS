@@ -46,7 +46,7 @@
 </div>
 
 
-<div class="auth-modal-backdrop" id="register-modal" aria-hidden="true">
+<div class="auth-modal-backdrop" id="register-modal" aria-hidden="true" data-open-register="@((ViewBag.AbrirRegistro as bool?) == true ? "true" : "false")">
     <div class="auth-modal auth-modal-large" role="dialog" aria-modal="true" aria-labelledby="register-title">
         <div class="login-card register-card auth-modal-card">
             <button type="button" class="auth-modal-close" aria-label="Cerrar">×</button>
@@ -329,4 +329,3 @@
         <span>V.E.M.O.S.</span>
     </div>
 </section>
-

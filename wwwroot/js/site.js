@@ -154,7 +154,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const hasMessage = document.querySelector('.auth-banner-message');
-    if (hasMessage) {
+    const openRegisterFromQuery = modalRegister && modalRegister.dataset.openRegister === 'true';
+    if (openRegisterFromQuery) {
+        openModal(modalRegister);
+    } else if (hasMessage) {
         openModal(modalLogin);
     }
 
@@ -242,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     filterOptions.forEach(function (option) {
-        option.addEventListener('click', function () {
+        option.addEventListener('click', async function () {
             const isSelected = option.classList.contains('is-selected');
             option.classList.toggle('is-selected', !isSelected);
             option.setAttribute('aria-pressed', String(!isSelected));
@@ -253,6 +256,20 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             syncActiveFiltersDisplay();
+            const restricciones = Array.from(filterOptions)
+                .filter(filter => filter.classList.contains('is-selected'))
+                .map(filter => filter.dataset.filterName);
+            const response = await fetch('/Options/Filtros/Guardar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(restricciones)
+            });
+            if (!response.ok) {
+                option.classList.toggle('is-selected', isSelected);
+                option.setAttribute('aria-pressed', String(isSelected));
+                if (check) check.textContent = isSelected ? '✓' : '+';
+                syncActiveFiltersDisplay();
+            }
         });
     });
 

@@ -6,6 +6,8 @@
     var nombre = string.Join(" ", new[] { usuario?.nombre, usuario?.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
     var inicial = !string.IsNullOrWhiteSpace(nombre) ? nombre.Trim()[0].ToString().ToUpperInvariant() : "U";
     var restricciones = usuario?.restricciones?.Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre)).ToList() ?? new List<VEMOS.Models.Restriccion>();
+    var amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    var favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
 }
 
 <section class="profile-page" aria-labelledby="profile-title">
@@ -68,24 +70,25 @@
                 </div>
                 <button type="button" class="profile-text-button">Crear</button>
             </div>
-            <article class="profile-group-row">
-                <div class="profile-group-icon"><img src="~/Logos/dobleHoja.png" alt="" /></div>
-                <div>
-                    <h3>Los del viernes</h3>
-                    <p>4 personas • Preferencias mixtas</p>
-                    <a href="/Options/Amigos">Ver grupo <span aria-hidden="true">→</span></a>
-                </div>
-                <span class="profile-group-tag">Habitual</span>
-            </article>
-            <article class="profile-group-row">
-                <div class="profile-group-icon"><img src="~/Logos/perfil.png" alt="" /></div>
-                <div>
-                    <h3>Familia G.</h3>
-                    <p>6 personas • Opciones seguras</p>
-                    <a href="/Options/Amigos">Ver grupo <span aria-hidden="true">→</span></a>
-                </div>
-                <span class="profile-group-tag">Familia</span>
-            </article>
+            @if (amigos.Any())
+            {
+                foreach (var amigo in amigos)
+                {
+                    var nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    <article class="profile-group-row">
+                        <div class="profile-group-icon"><img src="~/Logos/perfil.png" alt="" /></div>
+                        <div>
+                            <h3>@(string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo)</h3>
+                            <p>@@@amigo.username</p>
+                            <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(amigo.username)">Ver perfil <span aria-hidden="true">→</span></a>
+                        </div>
+                    </article>
+                }
+            }
+            else
+            {
+                <p class="profile-empty-preferences">Todavía no tenés amigos agregados.</p>
+            }
             <a class="profile-invite-link" href="/Options/Amigos">+ Invitar amigos o gestionar grupos</a>
         </section>
 
@@ -95,36 +98,27 @@
                     <p class="profile-kicker">Guardados</p>
                     <h2 id="favorites-title">Mis restaurantes favoritos</h2>
                 </div>
-                <a class="profile-text-button" href="/Mapa">Ver todos</a>
+                <a class="profile-text-button" href="/Favoritos">Ver todos</a>
             </div>
             <div class="profile-favorite-list">
-                <article class="profile-favorite-item">
-                    <img src="~/Images/Arturito.jpg" alt="Interior de restaurante" />
-                    <div>
-                        <h3>Verde &amp; Sabor Bistro</h3>
-                        <p>Palermo • Cocina saludable</p>
-                        <span class="profile-rating">★ 4.9</span>
-                    </div>
-                    <a href="/Home/Mapa" aria-label="Ver Verde y Sabor Bistro">Ver ficha <span aria-hidden="true">→</span></a>
-                </article>
-                <article class="profile-favorite-item">
-                    <img src="~/Images/plato-2.png" alt="Plato de restaurante" />
-                    <div>
-                        <h3>La Huella Sin Gluten</h3>
-                        <p>Recoleta • Opciones sin TACC</p>
-                        <span class="profile-rating">★ 4.8</span>
-                    </div>
-                    <a href="/Home/Mapa" aria-label="Ver La Huella Sin Gluten">Ver ficha <span aria-hidden="true">→</span></a>
-                </article>
-                <article class="profile-favorite-item">
-                    <img src="~/Images/plato-1.png" alt="Plato vegetariano" />
-                    <div>
-                        <h3>Sintacc Sushi Lab</h3>
-                        <p>Belgrano • Cocina japonesa</p>
-                        <span class="profile-rating">★ 4.7</span>
-                    </div>
-                    <a href="/Home/Mapa" aria-label="Ver Sintacc Sushi Lab">Ver ficha <span aria-hidden="true">→</span></a>
-                </article>
+                @if (favoritos.Any())
+                {
+                    foreach (var favorito in favoritos)
+                    {
+                        <article class="profile-favorite-item">
+                            <img src="~/Images/Arturito.jpg" alt="Interior de @favorito.nombre" />
+                            <div>
+                                <h3>@favorito.nombre</h3>
+                                <p>@favorito.direccion • @favorito.tipo</p>
+                            </div>
+                            <a href="/Home/DetalleRestaurante?nombre=@Uri.EscapeDataString(favorito.nombre)" aria-label="Ver @favorito.nombre">Ver ficha <span aria-hidden="true">→</span></a>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <p class="profile-empty-preferences">Todavía no tenés restaurantes favoritos.</p>
+                }
             </div>
             <a class="profile-map-prompt" href="/Home/Mapa">¿Querés descubrir nuevos lugares seguros para vos? <span>Explorar en mapa →</span></a>
         </section>

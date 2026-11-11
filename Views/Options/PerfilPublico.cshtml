@@ -1,0 +1,71 @@
+@model VEMOS.Models.Usuario
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Perfil de @" + Model.username;
+    var nombre = string.Join(" ", new[] { Model.nombre, Model.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    var inicial = !string.IsNullOrWhiteSpace(Model.username) ? Model.username.Trim()[0].ToString().ToUpperInvariant() : "U";
+    var favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+    var esAmigo = ViewBag.EsAmigo is bool value && value;
+    var fotoUrl = !string.IsNullOrWhiteSpace(Model.foto)
+        ? (Model.foto.StartsWith("/", StringComparison.Ordinal) || Model.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? Model.foto
+            : Url.Content($"~/Images/{Model.foto}"))
+        : string.Empty;
+}
+
+<section class="profile-page public-profile-page" aria-labelledby="public-profile-title">
+    <a class="profile-edit-link" href="/Options/Amigos">← Volver a amigos</a>
+    <div class="profile-summary">
+        @if (!string.IsNullOrWhiteSpace(fotoUrl))
+        {
+            <img class="profile-avatar-large profile-avatar-photo" src="@fotoUrl" alt="Foto de @Model.username" />
+        }
+        else
+        {
+            <div class="profile-avatar-large" aria-hidden="true">@inicial</div>
+        }
+        <div class="profile-summary-copy">
+            <p class="profile-kicker">Perfil público</p>
+            <h1 id="public-profile-title">@(string.IsNullOrWhiteSpace(nombre) ? Model.username : nombre)</h1>
+            <p class="profile-handle">@@@Model.username <span>• Cuenta @Model.tipo</span></p>
+        </div>
+        @if (esAmigo)
+        {
+            <span class="profile-text-button">Ya son amigos</span>
+        }
+        else
+        {
+            <form method="post" action="/FamiliaAmigos/Agregar">
+                <input type="hidden" name="identificador" value="@Model.username" />
+                <button class="profile-edit-link" type="submit">Agregar como amigo</button>
+            </form>
+        }
+    </div>
+
+    <section class="profile-favorites-card public-profile-favorites" aria-labelledby="public-favorites-title">
+        <div class="profile-section-heading">
+            <div><p class="profile-kicker">Guardados</p><h2 id="public-favorites-title">Restaurantes favoritos</h2></div>
+            <span class="profile-preferences-count">@favoritos.Count()</span>
+        </div>
+        @if (favoritos.Any())
+        {
+            <div class="profile-favorite-list">
+                @foreach (var favorito in favoritos)
+                {
+                    <article class="profile-favorite-item">
+                        <div>
+                            <h3>@favorito.nombre</h3>
+                            <p>@favorito.direccion • @favorito.tipo</p>
+                        </div>
+                        <a href="/Home/DetalleRestaurante?nombre=@Uri.EscapeDataString(favorito.nombre)">Ver ficha <span aria-hidden="true">→</span></a>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="profile-empty-preferences">Esta persona todavía no tiene restaurantes favoritos.</p>
+        }
+    </section>
+</section>

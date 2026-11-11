@@ -9,5 +9,6 @@ public class Usuario
     public string email { get; set; }
     public string tipo { get; set; }
     public string contrasena { get; set; }
+    public string foto { get; set; }
     public List<Restriccion> restricciones { get; set; }
 }

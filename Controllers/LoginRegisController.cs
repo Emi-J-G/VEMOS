@@ -81,8 +81,7 @@ public class LoginRegisController : Controller
     [HttpGet("/LoginRegis/Registro")]
     public IActionResult Registro(string mensaje)
     {
-        ViewBag.Mensaje = mensaje;
-        return View();
+        return RedirectToAction("Index", "Home", new { mensaje, abrirRegistro = true });
     }
 
     //registra al user en la base de datos y lo loguea

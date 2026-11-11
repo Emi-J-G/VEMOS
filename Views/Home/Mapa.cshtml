@@ -18,11 +18,23 @@
 
     var nombresUsuario = new HashSet<string>(
         restriccionesUsuario
-            .Where(r => !string.IsNullOrWhiteSpace(r.nombre))
-            .Select(r => r.nombre.Trim()),
+            .Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre))
+            .Select(r => NormalizarRestriccion(r.nombre)),
         StringComparer.OrdinalIgnoreCase);
 
     var restaurantes = Model?.ToList() ?? new List<VEMOS.Models.Restaurante>();
+
+    string NormalizarRestriccion(string? nombre)
+    {
+        return (nombre ?? string.Empty)
+            .Normalize(System.Text.NormalizationForm.FormD)
+            .Where(caracter => char.IsLetterOrDigit(caracter) &&
+                               System.Globalization.CharUnicodeInfo.GetUnicodeCategory(caracter) !=
+                               System.Globalization.UnicodeCategory.NonSpacingMark)
+            .Aggregate(new System.Text.StringBuilder(), (builder, caracter) => builder.Append(char.ToLowerInvariant(caracter)))
+            .ToString()
+            .Trim();
+    }
 }
 
 <section class="map-page-shell">
@@ -52,9 +64,9 @@
             <div class="map-filter-list" id="mapFilterList">
                 @foreach (var restriccion in restriccionesTodos)
                 {
-                    var checkedValue = nombresUsuario.Contains(restriccion) ? "checked" : "";
+                    var estaActiva = nombresUsuario.Contains(NormalizarRestriccion(restriccion));
                     <label class="map-filter-option">
-                        <input type="checkbox" value="@restriccion" @checkedValue class="map-filter-checkbox" />
+                        <input type="checkbox" value="@restriccion" checked="@estaActiva" class="map-filter-checkbox" />
                         <span>@restriccion</span>
                     </label>
                 }
@@ -71,6 +83,7 @@
 
     <script>
         const restaurantes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(restaurantes.Select(r => new {
+            id = r.id,
             nombre = r.nombre,
             lat = r.lat,
             lng = r.lng,
@@ -79,7 +92,7 @@
         })));
 
         const usuariosRestricciones = [
-            @foreach (var restriccion in restriccionesUsuario.Where(r => !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
+            @foreach (var restriccion in restriccionesUsuario.Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
             {
                 <text>"@restriccion",</text>
             }
@@ -102,6 +115,14 @@
         }).addTo(map);
 
         const markers = new Map();
+
+        function normalizeRestriction(value) {
+            return (value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toLowerCase();
+        }
 
         function getSelectedRestrictions() {
             return [...document.querySelectorAll('.map-filter-checkbox:checked')]
@@ -140,7 +161,9 @@
                     return true;
                 }
 
-                return selectedRestrictions.every((restriccion) => (restaurante.restricciones || []).includes(restriccion));
+                return selectedRestrictions.every((restriccion) =>
+                    (restaurante.restricciones || []).some((disponible) =>
+                        normalizeRestriction(disponible) === normalizeRestriction(restriccion)));
             });
 
             restaurantesFiltrados.forEach((restaurante) => {
@@ -160,11 +183,6 @@
             }
         }
 
-        const filteredByDefault = usuariosRestricciones.length > 0 ? usuariosRestricciones : [];
-        document.querySelectorAll('.map-filter-checkbox').forEach((checkbox) => {
-            checkbox.checked = filteredByDefault.includes(checkbox.value);
-        });
-
         renderMarkers();
 
         document.querySelectorAll('.map-filter-checkbox').forEach((checkbox) => {
@@ -180,7 +198,9 @@
             markers.clear();
 
             const restaurantesFiltrados = restaurantes.filter((restaurante) => {
-                const coincidenRestriccion = selectedRestrictions.length === 0 || selectedRestrictions.every((r) => (restaurante.restricciones || []).includes(r));
+                const coincidenRestriccion = selectedRestrictions.length === 0 || selectedRestrictions.every((r) =>
+                    (restaurante.restricciones || []).some((disponible) =>
+                        normalizeRestriction(disponible) === normalizeRestriction(r)));
                 const coincidenTexto = !text || (restaurante.nombre || '').toLowerCase().includes(text) || (restaurante.descripcion || '').toLowerCase().includes(text);
                 return coincidenRestriccion && coincidenTexto;
             });

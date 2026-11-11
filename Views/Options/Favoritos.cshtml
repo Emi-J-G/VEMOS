@@ -1,0 +1,63 @@
+@model IEnumerable<VEMOS.Models.Restaurante>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Mis favoritos";
+    var favoritos = Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+}
+
+<section class="search-page favorites-page" aria-labelledby="favorites-page-title">
+    <div class="search-page-header">
+        <div>
+            <p class="profile-kicker">Guardados</p>
+            <h1 id="favorites-page-title">Mis restaurantes favoritos</h1>
+            <p>Todos los lugares que guardaste para volver a visitarlos.</p>
+        </div>
+        <a class="section-link" href="/Mapa">Explorar restaurantes <span aria-hidden="true">→</span></a>
+    </div>
+
+    @if (favoritos.Any())
+    {
+        <div class="search-results-grid favorites-results-grid">
+            @foreach (var restaurante in favoritos)
+            {
+                var foto = restaurante.foto?.Trim();
+                var fotoUrl = string.IsNullOrWhiteSpace(foto)
+                    ? string.Empty
+                    : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? foto
+                        : Url.Content($"~/Images/{foto}"));
+
+                <article class="search-result-card favorite-expanded-card">
+                    <div class="search-result-image">
+                        @if (string.IsNullOrWhiteSpace(fotoUrl))
+                        {
+                            <span class="restaurant-no-image">No hay imagen disponible</span>
+                        }
+                        else
+                        {
+                            <img src="@fotoUrl" alt="Interior de @restaurante.nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                            <span class="restaurant-no-image" hidden>No hay imagen disponible</span>
+                        }
+                    </div>
+                    <div class="search-result-body">
+                        <p class="search-result-type">@restaurante.tipo</p>
+                        <h2>@restaurante.nombre</h2>
+                        <p>@restaurante.descripcion</p>
+                        <p class="favorite-expanded-address">@restaurante.direccion</p>
+                        <a href="/Home/DetalleRestaurante?nombre=@Uri.EscapeDataString(restaurante.nombre)">Ver ficha completa →</a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="favorites-empty-state">
+            <p class="profile-kicker">Todavía no hay lugares guardados</p>
+            <h2>Tu lista de favoritos está vacía</h2>
+            <p>Explorá el mapa y guardá los restaurantes que quieras volver a visitar.</p>
+            <a class="settings-primary-button" href="/Mapa">Explorar mapa</a>
+        </div>
+    }
+</section>

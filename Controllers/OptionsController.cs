@@ -33,7 +33,24 @@ public class OptionsController : Controller
             return RedirectToAction("Index", "Home");
         }
 
+        var db = new DB();
+        ViewBag.Amigos = db.ObtenerAmigos(usuario.id);
+        ViewBag.RestaurantesFavoritos = db.ObtenerRestaurantesFavoritos(usuario.id);
         return View(usuario);
+    }
+
+    [HttpGet("/Favoritos")]
+    [HttpGet("/Options/Favoritos")]
+    public IActionResult Favoritos()
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        var favoritos = new DB().ObtenerRestaurantesFavoritos(usuario.id);
+        return View(favoritos);
     }
 
     [HttpPost("/Options/Perfil/Editar")]
@@ -77,8 +94,44 @@ public class OptionsController : Controller
         if (usuario == null)
             return RedirectToAction("Index", "Home");
 
-        ViewBag.Amigos = new DB().ObtenerAmigos(usuario.id);
+        var db = new DB();
+        ViewBag.Amigos = db.ObtenerAmigos(usuario.id);
+        ViewBag.Busqueda = string.Empty;
+        ViewBag.ResultadosBusqueda = Array.Empty<Usuario>();
         return View();
+    }
+
+    [HttpGet("/Options/Usuarios/Buscar")]
+    public IActionResult BuscarUsuarios(string q = "")
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return RedirectToAction("Index", "Home");
+
+        var db = new DB();
+        ViewBag.Amigos = db.ObtenerAmigos(usuario.id);
+        ViewBag.Busqueda = q?.Trim() ?? string.Empty;
+        ViewBag.ResultadosBusqueda = string.IsNullOrWhiteSpace(q)
+            ? Enumerable.Empty<Usuario>()
+            : db.BuscarUsuarios(q, usuario.id);
+        return View("Amigos");
+    }
+
+    [HttpGet("/Options/Usuarios/Perfil")]
+    public IActionResult PerfilPublico(string username)
+    {
+        var usuarioActual = ObtenerUsuarioSesion();
+        if (usuarioActual == null)
+            return RedirectToAction("Index", "Home");
+
+        var db = new DB();
+        var perfil = db.ObtenerPerfilPublico(username?.Trim() ?? string.Empty);
+        if (perfil == null || perfil.id == usuarioActual.id)
+            return RedirectToAction(nameof(Amigos));
+
+        ViewBag.RestaurantesFavoritos = db.ObtenerRestaurantesFavoritos(perfil.id);
+        ViewBag.EsAmigo = db.SonAmigos(usuarioActual.id, perfil.id);
+        return View(perfil);
     }
 
     [HttpPost("/FamiliaAmigos/Agregar")]
@@ -102,6 +155,66 @@ public class OptionsController : Controller
         }
 
         return RedirectToAction(nameof(Amigos));
+    }
+
+    [HttpGet("/Options/Amigos/Lista")]
+    public IActionResult ListaAmigos()
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        return Json(new DB().ObtenerAmigos(usuario.id));
+    }
+
+    [HttpPost("/Options/Amigos/AgregarFetch")]
+    public IActionResult AgregarAmigoFetch([FromForm] string identificador)
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(identificador))
+            return BadRequest(new { message = "Ingresá un usuario o correo electrónico." });
+
+        if (!new DB().AgregarAmigo(usuario.id, identificador))
+            return Conflict(new { message = "No encontramos a esa persona o ya forma parte de tus amigos." });
+
+        return Ok(new { message = "¡Amigo agregado!", amigos = new DB().ObtenerAmigos(usuario.id) });
+    }
+
+    [HttpPost("/Options/Favoritos/Toggle")]
+    public IActionResult AlternarFavorito([FromForm] int idRestaurante)
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        var favorito = new DB().AlternarRestauranteFavorito(usuario.id, idRestaurante);
+        return Ok(new { favorito });
+    }
+
+    [HttpGet("/Options/Favoritos/Lista")]
+    public IActionResult ListaFavoritos()
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        return Json(new DB().ObtenerRestaurantesFavoritos(usuario.id));
+    }
+
+    [HttpPost("/Options/Filtros/Guardar")]
+    public IActionResult GuardarFiltros([FromBody] string[] restricciones)
+    {
+        var usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        new DB().ActualizarRestriccionesUsuario(usuario.id, restricciones ?? Array.Empty<string>());
+        usuario.restricciones = new DB().GetRestriccionesByUsuario(usuario.username);
+        HttpContext.Session.SetString("UsuarioActual", JsonSerializer.Serialize(usuario));
+        return Ok(new { restricciones = usuario.restricciones.Select(restriccion => restriccion.nombre) });
     }
 
     public IActionResult Reportar()

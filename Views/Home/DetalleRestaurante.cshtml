@@ -2,6 +2,13 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = Model?.nombre ?? "Restaurante";
+    var esFavorito = ViewBag.EsFavorito is bool favorito && favorito;
+    var foto = Model?.foto?.Trim();
+    var fotoUrl = string.IsNullOrWhiteSpace(foto)
+        ? string.Empty
+        : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? foto
+            : Url.Content($"~/Images/{foto}"));
 }
 
 <section class="restaurant-detail-shell">
@@ -12,14 +19,22 @@
     <article class="restaurant-detail-card">
         <div class="restaurant-detail-hero">
             <div class="restaurant-detail-image">
-                <img src="~/Images/Arturito.jpg" alt="Interior de @Model.nombre" />
+                @if (string.IsNullOrWhiteSpace(fotoUrl))
+                {
+                    <span class="restaurant-no-image">No hay imagen disponible</span>
+                }
+                else
+                {
+                    <img src="@fotoUrl" alt="Exterior de @Model.nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                    <span class="restaurant-no-image" hidden>No hay imagen disponible</span>
+                }
                 <span class="restaurant-detail-photo-tag">★ Recomendado por la comunidad</span>
             </div>
             <div class="restaurant-detail-hero-copy">
                 <div class="restaurant-detail-badge">@Model.tipo</div>
                 <h1>@Model.nombre</h1>
                 <p>@Model.descripcion</p>
-                <div class="restaurant-detail-meta"><span>★ 4.8</span><span>•</span><span>Palermo, Buenos Aires</span></div>
+                <div class="restaurant-detail-meta"><span>@Model.tipo</span><span>•</span><span>@Model.direccion</span></div>
             </div>
         </div>
 
@@ -57,7 +72,9 @@
 
             <div class="restaurant-detail-actions">
                 <a class="restaurant-action-primary" href="/Home/Mapa">Ver en el mapa</a>
-                <button type="button" class="restaurant-action-secondary">Guardar favorito</button>
+                <button type="button" class="restaurant-action-secondary" id="favorite-restaurant-button" data-restaurant-id="@Model.id">
+                    @(esFavorito ? "Quitar de favoritos" : "Guardar favorito")
+                </button>
             </div>
         </div>
     </article>
@@ -71,4 +88,17 @@
             <article><img src="~/Images/plato-1.png" alt="Plato destacado" /><strong>Ensalada fresca</strong><span>Vegetariano</span></article>
         </div>
     </section>
+
+    <script>
+        document.getElementById('favorite-restaurant-button')?.addEventListener('click', async function () {
+            const response = await fetch('/Options/Favoritos/Toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ idRestaurante: this.dataset.restaurantId })
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            this.textContent = data.favorito ? 'Quitar de favoritos' : 'Guardar favorito';
+        });
+    </script>
 </section>
