@@ -3,6 +3,10 @@
     ViewData["Title"] = "Inicio";
 
     var filtrosActivos = ViewBag.filtrosActivos as IEnumerable<Restriccion> ?? new List<Restriccion>();
+    var platosFavoritos = ViewBag.PlatosFavoritos as IEnumerable<Plato> ?? Enumerable.Empty<Plato>();
+    var restaurantesFavoritos = ViewBag.RestaurantesFavoritos as IEnumerable<Restaurante> ?? Enumerable.Empty<Restaurante>();
+    var hayFavoritos = ViewBag.HayFavoritos as bool? ?? false;
+
     var todasRestricciones = new[]
     {
         "Celiaquía",
@@ -23,6 +27,8 @@
             filtrosActivosNombres.Add(filtro.nombre.Trim());
         }
     }
+
+    var tituloFavoritos = platosFavoritos.Any() ? "Tus platos favoritos" : (restaurantesFavoritos.Any() ? "Tus restaurantes favoritos" : "Sin favoritos");
 }
 
 <section class="signed-home-hero" aria-labelledby="signed-home-title">
@@ -84,7 +90,12 @@
 
     <div class="signed-home-map-column">
         <div class="signed-home-map-card">
-            <div class="signed-home-map">
+            <div class="signed-home-map" aria-label="Vista previa del mapa de restaurantes">
+                <div class="mini-map-grid" aria-hidden="true"></div>
+                <div class="mini-map-road road-one" aria-hidden="true"></div>
+                <div class="mini-map-road road-two" aria-hidden="true"></div>
+                <div class="mini-map-road road-three" aria-hidden="true"></div>
+
                 <div class="map-label"><span aria-hidden="true">▥</span> Mapa de restaurantes</div>
                 <a class="map-open-button" href="/Mapa">Abrir mapa completo <span aria-hidden="true">→</span></a>
             </div>
@@ -93,43 +104,91 @@
     </div>
 </section>
 
-<section class="inspiration-section" aria-labelledby="inspiration-title">
+<section class="inspiration-section" aria-labelledby="favorites-section-title">
     <div class="section-heading inspiration-heading">
         <div>
-            <h2 id="inspiration-title">Inspirate para tu próxima salida</h2>
-            <p>Estas tarjetas muestran ejemplos de opciones que se pueden explorar en V.E.M.O.S.</p>
+            <h2 id="favorites-section-title">@tituloFavoritos</h2>
+            <p>Acá aparecen tus favoritos guardados en la base de datos.</p>
         </div>
-        <a class="section-link" href="/Mapa">Ver en el mapa <span aria-hidden="true">→</span></a>
+        <a class="section-link" href="/Mapa">Ir al mapa <span aria-hidden="true">→</span></a>
     </div>
 
-    <div class="inspiration-cards">
-        <article class="inspiration-card">
-            <div class="inspiration-image">
-                <img src="~/Images/plato-3.png" alt="Plato sin gluten" />
-                <span>Sin TACC</span>
-            </div>
-            <h3>Platos sin gluten</h3>
-            <p>Explorá opciones y consultá los detalles de cada establecimiento.</p>
-        </article>
-        <article class="inspiration-card">
-            <div class="inspiration-image">
-                <img src="~/Images/plato-1.png" alt="Plato vegetariano" />
-                <span>Vegetariano</span>
-            </div>
-            <h3>Opciones vegetarianas</h3>
-            <p>Descubrí propuestas para tus preferencias y elegí con más información.</p>
-        </article>
-        <article class="inspiration-card">
-            <div class="inspiration-image">
-                <img src="~/Images/plato-2.png" alt="Hamburguesa de restaurante" />
-                <span>Menús</span>
-            </div>
-            <h3>Conocé los platos</h3>
-            <p>Revisá ingredientes, menús y reseñas antes de tomar una decisión.</p>
-        </article>
-    </div>
+    @if (hayFavoritos)
+    {
+        <div class="inspiration-cards">
+            @if (platosFavoritos.Any())
+            {
+                foreach (var plato in platosFavoritos)
+                {
+                    var platoFoto = plato.foto?.Trim();
+                    var platoFotoUrl = string.IsNullOrWhiteSpace(platoFoto)
+                        ? string.Empty
+                        : (platoFoto.StartsWith("/", StringComparison.Ordinal) || platoFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                            ? platoFoto
+                            : Url.Content($"~/Images/{platoFoto}"));
 
-    <p class="inspiration-disclaimer">Contenido ilustrativo: las fotos y categorías son ejemplos para diseñar el prototipo, no recomendaciones médicas.</p>
+                    <article class="inspiration-card">
+                        <div class="inspiration-image @(string.IsNullOrWhiteSpace(platoFotoUrl) ? "inspiration-no-image" : "")">
+                            @if (!string.IsNullOrWhiteSpace(platoFotoUrl))
+                            {
+                                <img src="@platoFotoUrl" alt="@plato.nombre" onerror="this.hidden=true; this.parentElement.classList.add('inspiration-no-image'); this.parentElement.querySelector('.inspiration-no-image-text').hidden = false; this.nextElementSibling.hidden = true;" />
+                                <span class="inspiration-no-image-text" hidden>No hay imagen disponible</span>
+                                <span class="inspiration-image-badge">@plato.tipo</span>
+                            }
+                            else
+                            {
+                                <span class="inspiration-no-image-text">No hay imagen disponible</span>
+                                <span class="inspiration-image-badge">@plato.tipo</span>
+                            }
+                        </div>
+                        <h3>@plato.nombre</h3>
+                        <p>@plato.descripcion</p>
+                    </article>
+                }
+            }
+            else
+            {
+                foreach (var restaurante in restaurantesFavoritos)
+                {
+                    var restauranteFoto = restaurante.foto?.Trim();
+                    var restauranteFotoUrl = string.IsNullOrWhiteSpace(restauranteFoto)
+                        ? string.Empty
+                        : (restauranteFoto.StartsWith("/", StringComparison.Ordinal) || restauranteFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                            ? restauranteFoto
+                            : Url.Content($"~/Images/{restauranteFoto}"));
+
+                    <article class="inspiration-card">
+                        <div class="inspiration-image @(string.IsNullOrWhiteSpace(restauranteFotoUrl) ? "inspiration-no-image" : "")">
+                            @if (!string.IsNullOrWhiteSpace(restauranteFotoUrl))
+                            {
+                                <img src="@restauranteFotoUrl" alt="@restaurante.nombre" onerror="this.hidden=true; this.parentElement.classList.add('inspiration-no-image'); this.parentElement.querySelector('.inspiration-no-image-text').hidden = false; this.nextElementSibling.hidden = true;" />
+                                <span class="inspiration-no-image-text" hidden>No hay imagen disponible</span>
+                                <span class="inspiration-image-badge">@restaurante.tipo</span>
+                            }
+                            else
+                            {
+                                <span class="inspiration-no-image-text">No hay imagen disponible</span>
+                                <span class="inspiration-image-badge">@restaurante.tipo</span>
+                            }
+                        </div>
+                        <h3>@restaurante.nombre</h3>
+                        <p>@restaurante.direccion</p>
+                    </article>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <div class="community-card" style="max-width: 760px; margin-top: 1rem;">
+            <div class="community-icon" aria-hidden="true">♡</div>
+            <div class="community-card-content">
+                <h3>No tenés favoritos registrados</h3>
+                <p>Guardá tus primeros platos o restaurantes para que aparezcan acá y puedas volver rápido a ellos.</p>
+                <a href="/Mapa">Ir al mapa para registrar mis primeros favoritos <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
+    }
 </section>
 
 <section class="quick-access-section" aria-labelledby="quick-access-title">

@@ -369,6 +369,18 @@ public class DB
             return connection.Query<Restaurante>(query, new { idUsuario }).ToList();
         }
 
+    public List<Plato> ObtenerPlatosFavoritos(int idUsuario)
+    {
+        const string query = @"SELECT p.id, p.idRestaurante, p.nombre, p.descripcion, p.precio, p.tipo, p.foto
+                               FROM PlatosFavoritos pf
+                               INNER JOIN Platos p ON p.id = pf.idPlato
+                               WHERE pf.idUsuario = @idUsuario
+                               ORDER BY p.nombre";
+
+        using var connection = new SqlConnection(_connectionString);
+        return connection.Query<Plato>(query, new { idUsuario }).ToList();
+    }
+
     public void ActualizarRestriccionesUsuario(int idUsuario, IEnumerable<string> nombres)
         {
             var restricciones = nombres

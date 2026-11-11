@@ -94,17 +94,56 @@ public class HomeController : Controller
         return View();
     }
 
+    private Usuario? ObtenerUsuarioSesion()
+    {
+        var datosUsuario = HttpContext.Session.GetString("UsuarioActual");
+        if (string.IsNullOrWhiteSpace(datosUsuario))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Usuario>(datosUsuario);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public IActionResult Home()
     {
         if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
         {
             return RedirectToAction("Index");
         }
+
         DB db = new DB();
         List<Restriccion> filtrosActivos = new List<Restriccion>();
         string usuario = HttpContext.Session.GetString("Usuario");
         filtrosActivos = db.GetRestriccionesByUsuario(usuario);
         ViewBag.filtrosActivos = filtrosActivos;
+
+        var usuarioSesion = ObtenerUsuarioSesion();
+        var usuarioId = usuarioSesion?.id ?? 0;
+
+        if (usuarioId > 0)
+        {
+            var platosFavoritos = db.ObtenerPlatosFavoritos(usuarioId);
+            var restaurantesFavoritos = db.ObtenerRestaurantesFavoritos(usuarioId);
+
+            ViewBag.PlatosFavoritos = platosFavoritos;
+            ViewBag.RestaurantesFavoritos = restaurantesFavoritos;
+            ViewBag.HayFavoritos = platosFavoritos.Any() || restaurantesFavoritos.Any();
+        }
+        else
+        {
+            ViewBag.PlatosFavoritos = new List<Plato>();
+            ViewBag.RestaurantesFavoritos = new List<Restaurante>();
+            ViewBag.HayFavoritos = false;
+        }
+
         return View();
     }    
 
