@@ -197,13 +197,11 @@ public class DB
     public void registrarUsuario(Usuario usuario) {
         string query = "exec insertUser @username, @nombre, @apellido, @email, @contrasena, @tipo";
         string userQuery = "exec getUsuarioByEmail @pemail";
+        Usuario usuarioRegistrado = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) { 
             connection.Open();
             connection.Execute(query, new { username = usuario.username, nombre = usuario.nombre, apellido = usuario.apellido, email = usuario.email, contrasena = usuario.contrasena, tipo = usuario.tipo });
-            Usuario usuarioRegistrado = connection.QueryFirstOrDefault<Usuario>(userQuery, new { pemail = usuario.email });
-            if (usuarioRegistrado == null)
-                throw new InvalidOperationException("No se pudo recuperar el usuario recién registrado.");
-
+            usuarioRegistrado = connection.QueryFirstOrDefault<Usuario>(userQuery, new { pemail = usuario.email });
             usuario.id = usuarioRegistrado.id;
 
             if (usuario.restricciones != null && usuario.restricciones.Any())
