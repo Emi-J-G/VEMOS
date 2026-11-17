@@ -3,6 +3,10 @@
     ViewData["Title"] = "Inicio";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/index.css" asp-append-version="true" />
+}
+
 
 @if (!string.IsNullOrEmpty(ViewBag.Mensaje as string))
 {

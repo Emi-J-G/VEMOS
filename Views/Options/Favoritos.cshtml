@@ -6,6 +6,10 @@
     IEnumerable<VEMOS.Models.Restaurante> favoritos = Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/favoritos.css" asp-append-version="true" />
+}
+
 <section class="search-page favorites-page" aria-labelledby="favorites-page-title">
     <div class="search-page-header">
         <div>

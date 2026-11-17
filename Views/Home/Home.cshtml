@@ -31,6 +31,10 @@
     string tituloFavoritos = platosFavoritos.Any() ? "Tus platos favoritos" : (restaurantesFavoritos.Any() ? "Tus restaurantes favoritos" : "Sin favoritos");
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/home.css" asp-append-version="true" />
+}
+
 <section class="signed-home-hero" aria-labelledby="signed-home-title">
     <div class="signed-home-copy">
         <div class="signed-home-badge">
