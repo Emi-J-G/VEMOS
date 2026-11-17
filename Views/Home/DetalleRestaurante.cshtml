@@ -2,9 +2,9 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = Model?.nombre ?? "Restaurante";
-    var esFavorito = ViewBag.EsFavorito is bool favorito && favorito;
-    var foto = Model?.foto?.Trim();
-    var fotoUrl = string.IsNullOrWhiteSpace(foto)
+    bool esFavorito = ViewBag.EsFavorito is bool favorito && favorito;
+    string foto = Model?.foto?.Trim();
+    string fotoUrl = string.IsNullOrWhiteSpace(foto)
         ? string.Empty
         : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? foto
@@ -53,7 +53,7 @@
                     <div class="detail-tags">
                         @if (Model.restricciones != null && Model.restricciones.Any())
                         {
-                            foreach (var restriccion in Model.restricciones)
+                            foreach (string restriccion in Model.restricciones)
                             {
                                 <span class="detail-tag">@restriccion</span>
                             }

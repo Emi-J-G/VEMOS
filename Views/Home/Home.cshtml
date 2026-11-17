@@ -2,12 +2,12 @@
     Layout = "_Layout";
     ViewData["Title"] = "Inicio";
 
-    var filtrosActivos = ViewBag.filtrosActivos as IEnumerable<Restriccion> ?? new List<Restriccion>();
-    var platosFavoritos = ViewBag.PlatosFavoritos as IEnumerable<Plato> ?? Enumerable.Empty<Plato>();
-    var restaurantesFavoritos = ViewBag.RestaurantesFavoritos as IEnumerable<Restaurante> ?? Enumerable.Empty<Restaurante>();
-    var hayFavoritos = ViewBag.HayFavoritos as bool? ?? false;
+    IEnumerable<Restriccion> filtrosActivos = ViewBag.filtrosActivos as IEnumerable<Restriccion> ?? new List<Restriccion>();
+    IEnumerable<Plato> platosFavoritos = ViewBag.PlatosFavoritos as IEnumerable<Plato> ?? Enumerable.Empty<Plato>();
+    IEnumerable<Restaurante> restaurantesFavoritos = ViewBag.RestaurantesFavoritos as IEnumerable<Restaurante> ?? Enumerable.Empty<Restaurante>();
+    bool hayFavoritos = ViewBag.HayFavoritos as bool? ?? false;
 
-    var todasRestricciones = new[]
+    string[] todasRestricciones = new[]
     {
         "Celiaquía",
         "Diabetes",
@@ -19,8 +19,8 @@
         "Alergias"
     };
 
-    var filtrosActivosNombres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    foreach (var filtro in filtrosActivos)
+    HashSet<string> filtrosActivosNombres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (Restriccion filtro in filtrosActivos)
     {
         if (!string.IsNullOrWhiteSpace(filtro.nombre))
         {
@@ -28,7 +28,7 @@
         }
     }
 
-    var tituloFavoritos = platosFavoritos.Any() ? "Tus platos favoritos" : (restaurantesFavoritos.Any() ? "Tus restaurantes favoritos" : "Sin favoritos");
+    string tituloFavoritos = platosFavoritos.Any() ? "Tus platos favoritos" : (restaurantesFavoritos.Any() ? "Tus restaurantes favoritos" : "Sin favoritos");
 }
 
 <section class="signed-home-hero" aria-labelledby="signed-home-title">
@@ -67,9 +67,9 @@
                 </div>
 
                 <div class="filter-editor-grid">
-                    @foreach (var filtro in todasRestricciones)
+                    @foreach (string filtro in todasRestricciones)
                     {
-                        var seleccionado = filtrosActivosNombres.Contains(filtro);
+                        bool seleccionado = filtrosActivosNombres.Contains(filtro);
                         <button type="button"
                                 class="filter-editor-option @(seleccionado ? "is-selected" : "")"
                                 data-filter-name="@filtro"
@@ -118,10 +118,10 @@
         <div class="inspiration-cards">
             @if (platosFavoritos.Any())
             {
-                foreach (var plato in platosFavoritos)
+                foreach (Plato plato in platosFavoritos)
                 {
-                    var platoFoto = plato.foto?.Trim();
-                    var platoFotoUrl = string.IsNullOrWhiteSpace(platoFoto)
+                    string platoFoto = plato.foto?.Trim();
+                    string platoFotoUrl = string.IsNullOrWhiteSpace(platoFoto)
                         ? string.Empty
                         : (platoFoto.StartsWith("/", StringComparison.Ordinal) || platoFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                             ? platoFoto
@@ -148,10 +148,10 @@
             }
             else
             {
-                foreach (var restaurante in restaurantesFavoritos)
+                foreach (Restaurante restaurante in restaurantesFavoritos)
                 {
-                    var restauranteFoto = restaurante.foto?.Trim();
-                    var restauranteFotoUrl = string.IsNullOrWhiteSpace(restauranteFoto)
+                    string restauranteFoto = restaurante.foto?.Trim();
+                    string restauranteFotoUrl = string.IsNullOrWhiteSpace(restauranteFoto)
                         ? string.Empty
                         : (restauranteFoto.StartsWith("/", StringComparison.Ordinal) || restauranteFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                             ? restauranteFoto

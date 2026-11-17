@@ -1,8 +1,9 @@
 @{
     ViewData["Title"] = "Familia y Amigos";
-    var amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
-    var resultadosBusqueda = ViewBag.ResultadosBusqueda as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
-    var busqueda = ViewBag.Busqueda as string ?? string.Empty;
+    IEnumerable<VEMOS.Models.Usuario> amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    IEnumerable<VEMOS.Models.Usuario> resultadosBusqueda = ViewBag.ResultadosBusqueda as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    string busqueda = ViewBag.Busqueda as string ?? string.Empty;
+    string mensaje = ViewBag.Mensaje as string;
 }
 
 <section class="friends-page" aria-labelledby="friends-title">
@@ -21,7 +22,7 @@
         <a href="/Buscar">Explorar lugares →</a>
     </div>
 
-    @if (TempData["AmigosMensaje"] is string mensaje)
+    @if (!string.IsNullOrWhiteSpace(mensaje))
     {
         <div class="profile-feedback" role="status">@mensaje</div>
     }
@@ -89,14 +90,14 @@
         else if (resultadosBusqueda.Any())
         {
             <div class="friends-list friends-search-results">
-                @foreach (var resultado in resultadosBusqueda)
+                @foreach (VEMOS.Models.Usuario resultado in resultadosBusqueda)
                 {
-                    var nombreResultado = string.Join(" ", new[] { resultado.nombre, resultado.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
-                    var inicialResultado = !string.IsNullOrWhiteSpace(resultado.username) ? resultado.username.Trim()[0].ToString().ToUpperInvariant() : "U";
+                    string nombreResultado = string.Join(" ", new[] { resultado.nombre, resultado.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    string inicialResultado = !string.IsNullOrWhiteSpace(resultado.username) ? resultado.username.Trim()[0].ToString().ToUpperInvariant() : "U";
                     <div class="friend-list-item">
                         @if (!string.IsNullOrWhiteSpace(resultado.foto))
                         {
-                            var fotoResultado = resultado.foto.StartsWith("/", StringComparison.Ordinal) || resultado.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                            string fotoResultado = resultado.foto.StartsWith("/", StringComparison.Ordinal) || resultado.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                                 ? resultado.foto
                                 : Url.Content($"~/Images/{resultado.foto}");
                             <img class="friend-list-avatar friend-list-photo" src="@fotoResultado" alt="Foto de @resultado.username" />
@@ -121,9 +122,9 @@
         @if (amigos.Any())
         {
             <div class="friends-list">
-                @foreach (var amigo in amigos)
+                @foreach (VEMOS.Models.Usuario amigo in amigos)
                 {
-                    var nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    string nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
                     <div class="friend-list-item">
                         <div class="friend-list-avatar">@((string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo).Trim()[0].ToString().ToUpperInvariant())</div>
                         <div><strong>@(string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo)</strong><span>@@@amigo.username</span></div>

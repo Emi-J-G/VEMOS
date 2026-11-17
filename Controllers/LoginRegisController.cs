@@ -28,27 +28,27 @@ public class LoginRegisController : Controller
     [HttpGet("/LoginRegis/GoogleLogin")]
     public IActionResult GoogleLogin(string returnUrl = "/")
     {
-        var redirectUrl = Url.Action(nameof(GoogleResponse), "LoginRegis", null, Request.Scheme) ?? "/signin-google";
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+        string redirectUrl = Url.Action(nameof(GoogleResponse), "LoginRegis", null, Request.Scheme) ?? "/signin-google";
+        AuthenticationProperties properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
     [HttpGet("/LoginRegis/GoogleResponse")]
     public async Task<IActionResult> GoogleResponse()
     {
-        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        AuthenticationResult result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         if (!result.Succeeded || result.Principal == null)
         {
             return RedirectToAction("Index", "Home", new { mensaje = "No se pudo iniciar sesión con Google." });
         }
 
-        var claims = result.Principal.Claims;
-        var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+         ClaimsPrincipal claims = result.Principal;
+         string email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
             ?? claims.FirstOrDefault(c => c.Type == "email")?.Value;
-        var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+        string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
             ?? claims.FirstOrDefault(c => c.Type == "name")?.Value
             ?? email ?? "Usuario Google";
-        var apellido = claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value
+        string apellido = claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value
             ?? claims.FirstOrDefault(c => c.Type == "family_name")?.Value
             ?? string.Empty;
 
@@ -88,7 +88,7 @@ public class LoginRegisController : Controller
     [HttpPost("/LoginRegis/Registrar")]
     public IActionResult Registrar(string nombreUsuario, string nombre, string apellido, string contrasena, string email, string[] restricciones, string tipo)
     {
-        var restriccionesUsuario = (restricciones ?? Array.Empty<string>())
+        Restriccion restriccionesUsuario = (restricciones ?? Array.Empty<string>())
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Select(r => new Restriccion { nombre = r })
             .ToList();

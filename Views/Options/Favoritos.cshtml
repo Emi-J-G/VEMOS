@@ -3,7 +3,7 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Mis favoritos";
-    var favoritos = Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+    IEnumerable<VEMOS.Models.Restaurante> favoritos = Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
 }
 
 <section class="search-page favorites-page" aria-labelledby="favorites-page-title">
@@ -19,10 +19,10 @@
     @if (favoritos.Any())
     {
         <div class="search-results-grid favorites-results-grid">
-            @foreach (var restaurante in favoritos)
+            @foreach (VEMOS.Models.Restaurante restaurante in favoritos)
             {
-                var foto = restaurante.foto?.Trim();
-                var fotoUrl = string.IsNullOrWhiteSpace(foto)
+                string foto = restaurante.foto?.Trim();
+                string fotoUrl = string.IsNullOrWhiteSpace(foto)
                     ? string.Empty
                     : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                         ? foto

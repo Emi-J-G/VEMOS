@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddSession();
@@ -30,22 +30,22 @@ builder.Services.AddAuthentication(options =>
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Events.OnRemoteFailure = context =>
     {
-        var message = Uri.EscapeDataString("No se pudo completar el inicio de sesión con Google. Volvé a intentarlo.");
+        string message = Uri.EscapeDataString("No se pudo completar el inicio de sesión con Google. Volvé a intentarlo.");
         context.Response.Redirect($"/?mensaje={message}");
         context.HandleResponse();
         return Task.CompletedTask;
     };
     options.Events.OnCreatingTicket = context =>
     {
-        var principal = context.Principal;
+        ClaimsPrincipal principal = context.Principal;
         if (principal == null)
         {
             return Task.CompletedTask;
         }
 
-        var email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email");
-        var name = principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue("name");
-        var username = email ?? name ?? "google-user";
+        string? email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email");
+        string? name = principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue("name");
+        string username = email ?? name ?? "google-user";
 
         context.HttpContext.Session.SetString("Usuario", username);
         context.HttpContext.Session.SetString("NombreCompleto", name ?? email ?? "Usuario Google");
@@ -55,7 +55,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -3,8 +3,8 @@
     Layout = "_Layout";
     ViewData["Title"] = "Mapa";
 
-    var restriccionesUsuario = ViewBag.RestriccionesUsuario as IEnumerable<Restriccion> ?? new List<Restriccion>();
-    var restriccionesTodos = ViewBag.RestriccionesDisponibles as string[] ?? new[]
+    IEnumerable<Restriccion> restriccionesUsuario = ViewBag.RestriccionesUsuario as IEnumerable<Restriccion> ?? new List<Restriccion>();
+    string[] restriccionesTodos = ViewBag.RestriccionesDisponibles as string[] ?? new[]
     {
         "Celiaquía",
         "Diabetes",
@@ -16,13 +16,13 @@
         "Alergias"
     };
 
-    var nombresUsuario = new HashSet<string>(
+    HashSet<string> nombresUsuario = new HashSet<string>(
         restriccionesUsuario
             .Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre))
             .Select(r => NormalizarRestriccion(r.nombre)),
         StringComparer.OrdinalIgnoreCase);
 
-    var restaurantes = Model?.ToList() ?? new List<VEMOS.Models.Restaurante>();
+    List<VEMOS.Models.Restaurante> restaurantes = Model?.ToList() ?? new List<VEMOS.Models.Restaurante>();
 
     string NormalizarRestriccion(string? nombre)
     {
@@ -62,9 +62,9 @@
             </div>
 
             <div class="map-filter-list" id="mapFilterList">
-                @foreach (var restriccion in restriccionesTodos)
+                @foreach (string restriccion in restriccionesTodos)
                 {
-                    var estaActiva = nombresUsuario.Contains(NormalizarRestriccion(restriccion));
+                    bool estaActiva = nombresUsuario.Contains(NormalizarRestriccion(restriccion));
                     <label class="map-filter-option">
                         <input type="checkbox" value="@restriccion" checked="@estaActiva" class="map-filter-checkbox" />
                         <span>@restriccion</span>
@@ -92,13 +92,13 @@
         })));
 
         const usuariosRestricciones = [
-            @foreach (var restriccion in restriccionesUsuario.Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
+            @foreach (string restriccion in restriccionesUsuario.Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
             {
                 <text>"@restriccion",</text>
             }
         ];
         const allRestrictions = [
-            @foreach (var restriccion in restriccionesTodos)
+            @foreach (string restriccion in restriccionesTodos)
             {
                 <text>"@restriccion",</text>
             }

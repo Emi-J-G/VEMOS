@@ -2,12 +2,13 @@
 
 @{
     ViewData["Title"] = "Perfil";
-    var usuario = Model;
-    var nombre = string.Join(" ", new[] { usuario?.nombre, usuario?.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
-    var inicial = !string.IsNullOrWhiteSpace(nombre) ? nombre.Trim()[0].ToString().ToUpperInvariant() : "U";
-    var restricciones = usuario?.restricciones?.Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre)).ToList() ?? new List<VEMOS.Models.Restriccion>();
-    var amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
-    var favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+    VEMOS.Models.Usuario usuario = Model;
+    string nombre = string.Join(" ", new[] { usuario?.nombre, usuario?.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    string inicial = !string.IsNullOrWhiteSpace(nombre) ? nombre.Trim()[0].ToString().ToUpperInvariant() : "U";
+    List<VEMOS.Models.Restriccion> restricciones = usuario?.restricciones?.Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre)).ToList() ?? new List<VEMOS.Models.Restriccion>();
+    IEnumerable<VEMOS.Models.Usuario> amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
+    IEnumerable<VEMOS.Models.Restaurante> favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+    string mensaje = ViewBag.Mensaje as string;
 }
 
 <section class="profile-page" aria-labelledby="profile-title">
@@ -22,7 +23,7 @@
         <a class="profile-edit-link" href="#editar-perfil">Editar perfil</a>
     </div>
 
-    @if (TempData["PerfilMensaje"] is string mensaje)
+    @if (!string.IsNullOrWhiteSpace(mensaje))
     {
         <div class="profile-feedback" role="status">@mensaje</div>
     }
@@ -49,7 +50,7 @@
         <div class="profile-chip-list">
             @if (restricciones.Count > 0)
             {
-                foreach (var restriccion in restricciones)
+                foreach (VEMOS.Models.Restriccion restriccion in restricciones)
                 {
                     <span class="profile-chip"><span aria-hidden="true">✓</span> @restriccion.nombre</span>
                 }
@@ -72,9 +73,9 @@
             </div>
             @if (amigos.Any())
             {
-                foreach (var amigo in amigos)
+                foreach (VEMOS.Models.Usuario amigo in amigos)
                 {
-                    var nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+                    string nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
                     <article class="profile-group-row">
                         <div class="profile-group-icon"><img src="~/Logos/perfil.png" alt="" /></div>
                         <div>
@@ -103,7 +104,7 @@
             <div class="profile-favorite-list">
                 @if (favoritos.Any())
                 {
-                    foreach (var favorito in favoritos)
+                    foreach (VEMOS.Models.Restaurante favorito in favoritos)
                     {
                         <article class="profile-favorite-item">
                             <img src="~/Images/Arturito.jpg" alt="Interior de @favorito.nombre" />

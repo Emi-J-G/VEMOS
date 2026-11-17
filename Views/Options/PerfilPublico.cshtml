@@ -3,11 +3,11 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Perfil de @" + Model.username;
-    var nombre = string.Join(" ", new[] { Model.nombre, Model.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
-    var inicial = !string.IsNullOrWhiteSpace(Model.username) ? Model.username.Trim()[0].ToString().ToUpperInvariant() : "U";
-    var favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
-    var esAmigo = ViewBag.EsAmigo is bool value && value;
-    var fotoUrl = !string.IsNullOrWhiteSpace(Model.foto)
+    string nombre = string.Join(" ", new[] { Model.nombre, Model.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    string inicial = !string.IsNullOrWhiteSpace(Model.username) ? Model.username.Trim()[0].ToString().ToUpperInvariant() : "U";
+    IEnumerable<VEMOS.Models.Restaurante> favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
+    bool esAmigo = ViewBag.EsAmigo is bool value && value;
+    string fotoUrl = !string.IsNullOrWhiteSpace(Model.foto)
         ? (Model.foto.StartsWith("/", StringComparison.Ordinal) || Model.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? Model.foto
             : Url.Content($"~/Images/{Model.foto}"))
@@ -51,7 +51,7 @@
         @if (favoritos.Any())
         {
             <div class="profile-favorite-list">
-                @foreach (var favorito in favoritos)
+                @foreach (VEMOS.Models.Restaurante favorito in favoritos)
                 {
                     <article class="profile-favorite-item">
                         <div>

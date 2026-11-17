@@ -10,9 +10,9 @@
 </head>
 <body>
     @{
-        var usuario = Context.Session.GetString("Usuario");
-        var nombreCompleto = Context.Session.GetString("NombreCompleto");
-        var inicialUsuario = !string.IsNullOrWhiteSpace(nombreCompleto)
+        string usuario = Context.Session.GetString("Usuario");
+        string nombreCompleto = Context.Session.GetString("NombreCompleto");
+        string inicialUsuario = !string.IsNullOrWhiteSpace(nombreCompleto)
             ? nombreCompleto.Trim()[0].ToString().ToUpperInvariant()
             : (!string.IsNullOrWhiteSpace(usuario)
                 ? usuario.Trim()[0].ToString().ToUpperInvariant()

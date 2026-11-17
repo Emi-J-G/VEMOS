@@ -1,8 +1,8 @@
 @model IEnumerable<VEMOS.Models.Restaurante>
 @{
     ViewData["Title"] = "Buscar";
-    var query = ViewBag.Query as string ?? string.Empty;
-    var filtro = ViewBag.Filtro as string ?? string.Empty;
+    string query = ViewBag.Query as string ?? string.Empty;
+    string filtro = ViewBag.Filtro as string ?? string.Empty;
 }
 
 <section class="search-page" aria-labelledby="search-title">
@@ -27,10 +27,10 @@
     </div>
 
     <div class="search-results-grid">
-        @foreach (var restaurante in Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>())
+        @foreach (VEMOS.Models.Restaurante restaurante in Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>())
         {
-            var foto = restaurante.foto?.Trim();
-            var fotoUrl = string.IsNullOrWhiteSpace(foto)
+            string foto = restaurante.foto?.Trim();
+            string fotoUrl = string.IsNullOrWhiteSpace(foto)
                 ? string.Empty
                 : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
                     ? foto
@@ -52,7 +52,7 @@
                     <h2>@restaurante.nombre</h2>
                     <p>@restaurante.descripcion</p>
                     <div>
-                        @foreach (var restriccion in restaurante.restricciones ?? Enumerable.Empty<string>())
+                        @foreach (string restriccion in restaurante.restricciones ?? Enumerable.Empty<string>())
                         {
                             <span>@restriccion</span>
                         }
