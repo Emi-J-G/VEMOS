@@ -362,6 +362,30 @@
   font-weight: 700;
 }
 
+.friends-chat-button {
+  border: 1px solid #188D78;
+  border-radius: 999px;
+  background: transparent;
+  color: #188D78;
+  padding: 8px 11px;
+  font-size: .62rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.friends-chat-button:hover {
+  background: #188D78;
+  color: #FFF7CC;
+}
+
+.friend-list-item form {
+  margin-left: auto;
+}
+
+.friend-list-item > a {
+  margin-left: 0 !important;
+}
+
 @media (max-width: 850px) {
   .friends-page {
     width: min(100% - 32px, 620px);

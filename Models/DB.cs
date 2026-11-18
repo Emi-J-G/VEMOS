@@ -40,6 +40,16 @@ public class DB
         usuario.restricciones = restricciones;
     }
 
+    public void EliminarAmigo(int idUsuario, int idAmigo)
+    {
+        const string query = @"DELETE FROM Amigos
+                               WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
+                                  OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)";
+
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Execute(query, new { idUsuario, idAmigo });
+    }
+    
     public List<Restriccion> GetRestriccionesByUsuario(string usuario)
     {
         string query = @"SELECT r.id, r.nombre, r.descripcion
@@ -311,6 +321,24 @@ public class DB
             return connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
         }
 
+    public List<Usuario> BuscarUsuariosPorTextoORestriccion(string texto, int idUsuario)
+        {
+            const string query = @"SELECT DISTINCT TOP 30 u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
+                                   FROM Usuarios u
+                                   LEFT JOIN RestriccionesUsuarios ru ON ru.idUsuario = u.id
+                                   LEFT JOIN Restricciones r ON r.id = ru.idRestriccion
+                                   WHERE u.id <> @idUsuario
+                                     AND (u.username LIKE '%' + @texto + '%'
+                                          OR u.nombre LIKE '%' + @texto + '%'
+                                          OR u.apellido LIKE '%' + @texto + '%'
+                                          OR u.email LIKE '%' + @texto + '%'
+                                          OR r.nombre LIKE '%' + @texto + '%')
+                                   ORDER BY u.nombre, u.apellido, u.username";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            return connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
+        }
+
     public Usuario? ObtenerPerfilPublico(string identificador)
         {
             const string query = @"SELECT TOP 1 id, username, nombre, apellido, tipo, foto
@@ -447,5 +475,165 @@ public class DB
 
             using SqlConnection connection = new SqlConnection(_connectionString);
             return connection.ExecuteScalar<bool>(query, new { idUsuario, identificador = identificador.Trim() });
+        }
+
+        public void AsegurarTablasChat()
+        {
+            const string query = @"
+                IF OBJECT_ID('dbo.ConversacionesChat', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.ConversacionesChat (
+                        id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        idUsuarioA int NOT NULL,
+                        idUsuarioB int NOT NULL,
+                        fechaActualizacion datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                        CONSTRAINT UQ_ConversacionesChat_Pares UNIQUE (idUsuarioA, idUsuarioB),
+                        CONSTRAINT CK_ConversacionesChat_Pares CHECK (idUsuarioA < idUsuarioB)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.MensajesChat', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.MensajesChat (
+                        id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        idConversacion int NOT NULL,
+                        idRemitente int NOT NULL,
+                        texto nvarchar(1000) NOT NULL,
+                        fecha datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                        CONSTRAINT FK_MensajesChat_Conversacion
+                            FOREIGN KEY (idConversacion) REFERENCES dbo.ConversacionesChat(id)
+                            ON DELETE CASCADE
+                    );
+                END;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            connection.Execute(query);
+        }
+
+        public int ObtenerOCrearConversacion(int idUsuarioA, int idUsuarioB)
+        {
+            if (idUsuarioA == idUsuarioB)
+                throw new ArgumentException("No se puede crear un chat consigo mismo.");
+
+            AsegurarTablasChat();
+
+            int menor = Math.Min(idUsuarioA, idUsuarioB);
+            int mayor = Math.Max(idUsuarioA, idUsuarioB);
+
+            const string query = @"
+                IF NOT EXISTS (
+                    SELECT 1 FROM ConversacionesChat
+                    WHERE idUsuarioA = @menor AND idUsuarioB = @mayor
+                )
+                BEGIN
+                    INSERT INTO ConversacionesChat (idUsuarioA, idUsuarioB)
+                    VALUES (@menor, @mayor);
+                END;
+
+                SELECT id FROM ConversacionesChat
+                WHERE idUsuarioA = @menor AND idUsuarioB = @mayor;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            return connection.ExecuteScalar<int>(query, new { menor, mayor });
+        }
+
+        public bool UsuarioPerteneceAConversacion(int idUsuario, int idConversacion)
+        {
+            AsegurarTablasChat();
+            const string query = @"SELECT CASE WHEN EXISTS (
+                                       SELECT 1 FROM ConversacionesChat
+                                       WHERE id = @idConversacion
+                                         AND (idUsuarioA = @idUsuario OR idUsuarioB = @idUsuario)
+                                   ) THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            return connection.ExecuteScalar<bool>(query, new { idUsuario, idConversacion });
+        }
+
+        public void AgregarMensajeChat(int idConversacion, int idRemitente, string texto)
+        {
+            AsegurarTablasChat();
+            const string query = @"
+                INSERT INTO MensajesChat (idConversacion, idRemitente, texto)
+                VALUES (@idConversacion, @idRemitente, @texto);
+
+                UPDATE ConversacionesChat
+                SET fechaActualizacion = SYSUTCDATETIME()
+                WHERE id = @idConversacion;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            connection.Execute(query, new { idConversacion, idRemitente, texto = texto.Trim() });
+        }
+
+        public List<MensajeChat> ObtenerMensajesChat(int idConversacion)
+        {
+            AsegurarTablasChat();
+            const string query = @"
+                SELECT m.id, m.idConversacion, m.idRemitente,
+                       m.texto, m.fecha, u.username AS remitenteNombre
+                FROM MensajesChat m
+                INNER JOIN Usuarios u ON u.id = m.idRemitente
+                WHERE m.idConversacion = @idConversacion
+                ORDER BY m.fecha, m.id;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            return connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
+        }
+
+        public Usuario? ObtenerUsuarioConversacion(int idConversacion, int idUsuarioActual)
+        {
+            AsegurarTablasChat();
+            const string query = @"
+                SELECT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
+                FROM ConversacionesChat c
+                INNER JOIN Usuarios u ON u.id = CASE
+                    WHEN c.idUsuarioA = @idUsuarioActual THEN c.idUsuarioB
+                    ELSE c.idUsuarioA
+                END
+                WHERE c.id = @idConversacion
+                  AND (c.idUsuarioA = @idUsuarioActual OR c.idUsuarioB = @idUsuarioActual);";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            return connection.QueryFirstOrDefault<Usuario>(query, new { idConversacion, idUsuarioActual });
+        }
+
+        public List<ConversacionChat> ObtenerConversacionesChat(int idUsuario)
+        {
+            AsegurarTablasChat();
+            const string query = @"
+                SELECT c.id, c.idUsuarioA, c.idUsuarioB,
+                       u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
+                FROM ConversacionesChat c
+                INNER JOIN Usuarios u ON u.id = CASE
+                    WHEN c.idUsuarioA = @idUsuario THEN c.idUsuarioB
+                    ELSE c.idUsuarioA
+                END
+                WHERE c.idUsuarioA = @idUsuario OR c.idUsuarioB = @idUsuario
+                ORDER BY c.fechaActualizacion DESC;";
+
+            const string ultimoQuery = @"
+                SELECT TOP 1 id, idConversacion, idRemitente, texto, fecha
+                FROM MensajesChat
+                WHERE idConversacion = @idConversacion
+                ORDER BY fecha DESC, id DESC;";
+
+            using SqlConnection connection = new SqlConnection(_connectionString);
+            var filas = connection.Query<ConversacionChat, Usuario, ConversacionChat>(
+                query,
+                (conversacion, usuario) =>
+                {
+                    conversacion.otroUsuario = usuario;
+                    return conversacion;
+                },
+                new { idUsuario },
+                splitOn: "id").ToList();
+
+            foreach (ConversacionChat conversacion in filas)
+            {
+                conversacion.ultimoMensaje = connection.QueryFirstOrDefault<MensajeChat>(
+                    ultimoQuery, new { idConversacion = conversacion.id });
+            }
+
+            return filas;
         }
     }

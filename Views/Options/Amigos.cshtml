@@ -84,8 +84,8 @@
             <div><p class="profile-kicker">Encontrá personas</p><h2 id="search-users-title">Buscar perfiles</h2></div>
         </div>
         <form class="friends-user-search-form" method="get" action="/Options/Usuarios/Buscar">
-            <label for="user-search">Usuario, nombre o correo</label>
-            <div><input id="user-search" name="q" value="@busqueda" placeholder="Ej. Martina o martina@mail.com" required /><button type="submit">Buscar</button></div>
+            <label for="user-search">Usuario, nombre, correo o restricción</label>
+            <div><input id="user-search" name="q" value="@busqueda" placeholder="Ej. Martina, martina@mail.com o celiaquía" required /><button type="submit">Buscar</button></div>
         </form>
         @if (!string.IsNullOrWhiteSpace(busqueda) && !resultadosBusqueda.Any())
         {
@@ -111,6 +111,10 @@
                             <div class="friend-list-avatar">@inicialResultado</div>
                         }
                         <div><strong>@(string.IsNullOrWhiteSpace(nombreResultado) ? resultado.username : nombreResultado)</strong><span>@@@resultado.username</span></div>
+                        <form method="post" action="/Chat/Iniciar">
+                            <input type="hidden" name="username" value="@resultado.username" />
+                            <button class="friends-chat-button" type="submit">Mensaje</button>
+                        </form>
                         <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(resultado.username)">Ver perfil →</a>
                     </div>
                 }
@@ -132,7 +136,11 @@
                     <div class="friend-list-item">
                         <div class="friend-list-avatar">@((string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo).Trim()[0].ToString().ToUpperInvariant())</div>
                         <div><strong>@(string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo)</strong><span>@@@amigo.username</span></div>
-                        <a href="/Buscar">Ver opciones juntos →</a>
+                        <form method="post" action="/Chat/Iniciar">
+                            <input type="hidden" name="username" value="@amigo.username" />
+                            <button class="friends-chat-button" type="submit">Mensaje</button>
+                        </form>
+                        <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(amigo.username)">Ver perfil →</a>
                     </div>
                 }
             </div>

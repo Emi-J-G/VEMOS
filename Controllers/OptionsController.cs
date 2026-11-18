@@ -124,16 +124,21 @@ public class OptionsController : Controller
         if (restriccionesUsuario == null || !restriccionesUsuario.Any())
             restriccionesUsuario = db.GetRestriccionesByUsuario(usuario.username);
 
-        ViewBag.ResultadosBusqueda = (restriccionesUsuario != null && restriccionesUsuario.Any())
-            ? db.GetUsuariosByRestriccion(restriccionesUsuario)
+        List<Usuario> resultados = db.BuscarUsuariosPorTextoORestriccion(q, usuario.id);
+
+        if (restriccionesUsuario != null && restriccionesUsuario.Any())
+        {
+            HashSet<int> idsCompatibles = db.GetUsuariosByRestriccion(restriccionesUsuario)
                 .Where(resultado => resultado.id != usuario.id)
-                .Where(resultado =>
-                    (resultado.username ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                    (resultado.nombre ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                    (resultado.apellido ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                    (resultado.email ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase))
-                .ToList()
-            : db.BuscarUsuarios(q, usuario.id);
+                .Select(resultado => resultado.id)
+                .ToHashSet();
+
+            resultados = resultados
+                .Where(resultado => idsCompatibles.Contains(resultado.id))
+                .ToList();
+        }
+
+        ViewBag.ResultadosBusqueda = resultados;
         return View("Amigos");
     }
 
@@ -207,6 +212,21 @@ public class OptionsController : Controller
         return Ok(new { message = "¡Amigo agregado!", amigos = db.ObtenerAmigos(usuario.id) });
     }
 
+    [HttpPost("/Options/Amigos/Eliminar")]
+    public IActionResult EliminarAmigo([FromForm] int idAmigo)
+    {
+        DB db = new DB();
+        Usuario usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return RedirectToAction("Index", "Home");
+
+        if (idAmigo <= 0)
+            return RedirectToAction(nameof(Amigos), new { mensaje = "No se pudo eliminar el amigo." });
+
+        db.EliminarAmigo(usuario.id, idAmigo);
+        return RedirectToAction(nameof(Amigos), new { mensaje = "Amigo eliminado de tu lista." });
+    }
+
     [HttpPost("/Options/Favoritos/Toggle")]
     public IActionResult AlternarFavorito([FromForm] int idRestaurante)
     {
@@ -247,5 +267,78 @@ public class OptionsController : Controller
     public IActionResult Reportar()
     {
         return View();
+    }
+
+    [HttpGet("/Chat")]
+    public IActionResult Chat(int? idConversacion = null)
+    {
+        Usuario usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return RedirectToAction("Index", "Home");
+
+        DB db = new DB();
+        List<ConversacionChat> conversaciones = db.ObtenerConversacionesChat(usuario.id);
+
+        int conversacionActiva = idConversacion ?? conversaciones.FirstOrDefault()?.id ?? 0;
+        Usuario? otroUsuario = conversacionActiva > 0
+            ? db.ObtenerUsuarioConversacion(conversacionActiva, usuario.id)
+            : null;
+
+        ViewBag.Conversaciones = conversaciones;
+        ViewBag.ConversacionActiva = conversacionActiva;
+        ViewBag.OtroUsuario = otroUsuario;
+        ViewBag.Mensajes = conversacionActiva > 0 && otroUsuario != null
+            ? db.ObtenerMensajesChat(conversacionActiva)
+            : new List<MensajeChat>();
+
+        return View("Chat");
+    }
+
+    [HttpPost("/Chat/Iniciar")]
+    public IActionResult IniciarChat([FromForm] string username)
+    {
+        Usuario usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return RedirectToAction("Index", "Home");
+
+        DB db = new DB();
+        Usuario? destino = db.ObtenerPerfilPublico(username?.Trim() ?? string.Empty);
+        if (destino == null || destino.id == usuario.id)
+            return RedirectToAction(nameof(Amigos), new { mensaje = "No se pudo iniciar ese chat." });
+
+        int conversacionId = db.ObtenerOCrearConversacion(usuario.id, destino.id);
+        return Redirect($"/Chat?idConversacion={conversacionId}");
+    }
+
+    [HttpPost("/Chat/Enviar")]
+    public IActionResult EnviarMensaje([FromForm] int idConversacion, [FromForm] string texto)
+    {
+        Usuario usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(texto))
+            return BadRequest(new { message = "Escribí un mensaje." });
+
+        DB db = new DB();
+        if (!db.UsuarioPerteneceAConversacion(usuario.id, idConversacion))
+            return Forbid();
+
+        db.AgregarMensajeChat(idConversacion, usuario.id, texto.Trim().Length > 1000 ? texto.Trim()[..1000] : texto.Trim());
+        return Ok(new { message = "Mensaje enviado." });
+    }
+
+    [HttpGet("/Chat/Mensajes")]
+    public IActionResult ObtenerMensajes(int idConversacion)
+    {
+        Usuario usuario = ObtenerUsuarioSesion();
+        if (usuario == null)
+            return Unauthorized();
+
+        DB db = new DB();
+        if (!db.UsuarioPerteneceAConversacion(usuario.id, idConversacion))
+            return Forbid();
+
+        return Json(db.ObtenerMensajesChat(idConversacion));
     }
 }

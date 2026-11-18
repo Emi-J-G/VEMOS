@@ -79,6 +79,56 @@
   color: #FFF7CC;
 }
 
+.profile-friend-hover-form {
+  margin: 0;
+}
+
+.profile-friend-hover-button {
+  position: relative;
+  border: 1px solid #188D78;
+  border-radius: 999px;
+  background: transparent;
+  color: #188D78;
+  font-size: .72rem;
+  font-weight: 700;
+  min-width: 130px;
+  padding: 10px 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profile-friend-label-default,
+.profile-friend-label-hover {
+  display: block;
+  line-height: 1;
+}
+
+.profile-friend-label-hover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.profile-friend-hover-button:hover,
+.profile-friend-hover-button:focus-visible {
+  background: #DE9929;
+  border-color: #DE9929;
+  color: #FFF7CC;
+}
+
+.profile-friend-hover-button:hover .profile-friend-label-default,
+.profile-friend-hover-button:focus-visible .profile-friend-label-default {
+  opacity: 0;
+}
+
+.profile-friend-hover-button:hover .profile-friend-label-hover,
+.profile-friend-hover-button:focus-visible .profile-friend-label-hover {
+  opacity: 1;
+}
+
 .profile-preferences-count {
   border-radius: 999px;
   background: #e4f3ef;

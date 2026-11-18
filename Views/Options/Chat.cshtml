@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "Mensajes";
+    var conversaciones = ViewBag.Conversaciones as IEnumerable<VEMOS.Models.ConversacionChat> ?? Enumerable.Empty<VEMOS.Models.ConversacionChat>();
+    var mensajes = ViewBag.Mensajes as IEnumerable<VEMOS.Models.MensajeChat> ?? Enumerable.Empty<VEMOS.Models.MensajeChat>();
+    VEMOS.Models.Usuario? otroUsuario = ViewBag.OtroUsuario as VEMOS.Models.Usuario;
+    int conversacionActiva = ViewBag.ConversacionActiva is int id ? id : 0;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/chat.css" asp-append-version="true" />
+}
+
+<section class="chat-page">
+    <aside class="chat-inbox">
+        <div class="chat-inbox-heading">
+            <p class="profile-kicker">Comunidad</p>
+            <h1>Mensajes</h1>
+        </div>
+
+        @if (conversaciones.Any())
+        {
+            <div class="chat-conversation-list">
+                @foreach (var conversacion in conversaciones)
+                {
+                    var persona = conversacion.otroUsuario;
+                    if (persona == null) { continue; }
+                    string nombre = string.Join(" ", new[] { persona.nombre, persona.apellido }.Where(valor => !string.IsNullOrWhiteSpace(valor)));
+                    string inicial = !string.IsNullOrWhiteSpace(persona.username) ? persona.username.Trim()[0].ToString().ToUpperInvariant() : "U";
+                    <a class="chat-conversation @(conversacion.id == conversacionActiva ? "active" : "")" href="/Chat?idConversacion=@conversacion.id">
+                        <div class="chat-avatar">@inicial</div>
+                        <div>
+                            <strong>@(string.IsNullOrWhiteSpace(nombre) ? persona.username : nombre)</strong>
+                            <span>@(conversacion.ultimoMensaje?.texto ?? "Iniciar conversación")</span>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="chat-empty">Todavía no tenés conversaciones. Buscá un perfil y elegí “Enviar mensaje”.</p>
+        }
+    </aside>
+
+    <section class="chat-window" aria-label="Conversación">
+        @if (otroUsuario != null)
+        {
+            string nombreOtro = string.Join(" ", new[] { otroUsuario.nombre, otroUsuario.apellido }.Where(valor => !string.IsNullOrWhiteSpace(valor)));
+            <header class="chat-window-header">
+                <div class="chat-avatar">@(!string.IsNullOrWhiteSpace(otroUsuario.username) ? otroUsuario.username.Trim()[0].ToString().ToUpperInvariant() : "U")</div>
+                <div><strong>@(string.IsNullOrWhiteSpace(nombreOtro) ? otroUsuario.username : nombreOtro)</strong><span>@@@otroUsuario.username</span></div>
+                <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(otroUsuario.username)">Ver perfil</a>
+            </header>
+
+            <div class="chat-messages" id="chat-messages" data-conversacion="@conversacionActiva">
+                @if (mensajes.Any())
+                {
+                    @foreach (var mensaje in mensajes)
+                    {
+                        bool propio = Context.Session.GetString("Usuario") == mensaje.remitenteNombre;
+                        <div class="chat-message @(propio ? "own" : "")">
+                            <p>@mensaje.texto</p>
+                            <time>@mensaje.fecha.ToLocalTime().ToString("HH:mm")</time>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="chat-empty chat-empty-messages">Este chat está listo. Escribí el primer mensaje.</p>
+                }
+            </div>
+
+            <form class="chat-compose" id="chat-compose" action="/Chat/Enviar" method="post">
+                <input type="hidden" name="idConversacion" value="@conversacionActiva" />
+                <label class="sr-only" for="chat-text">Mensaje</label>
+                <input id="chat-text" name="texto" type="text" maxlength="1000" placeholder="Escribí un mensaje…" autocomplete="off" required />
+                <button type="submit">Enviar</button>
+            </form>
+            <p id="chat-feedback" class="chat-feedback" hidden></p>
+        }
+        else
+        {
+            <div class="chat-no-selection">
+                <img src="~/Logos/Msj.png" alt="" />
+                <h2>Seleccioná una conversación</h2>
+                <p>Podés conversar con cualquier usuario, aunque todavía no sean amigos.</p>
+            </div>
+        }
+    </section>
+</section>
+
+<script>
+    const messages = document.getElementById('chat-messages');
+    const compose = document.getElementById('chat-compose');
+
+    if (messages) {
+        messages.scrollTop = messages.scrollHeight;
+
+        compose?.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const input = document.getElementById('chat-text');
+            const feedback = document.getElementById('chat-feedback');
+            const response = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            if (response.ok) {
+                input.value = '';
+                feedback.hidden = true;
+                await cargarMensajes();
+            } else {
+                const data = await response.json().catch(() => ({}));
+                feedback.textContent = data.message || 'No se pudo enviar el mensaje.';
+                feedback.hidden = false;
+            }
+        });
+
+        async function cargarMensajes() {
+            const id = messages.dataset.conversacion;
+            const response = await fetch(`/Chat/Mensajes?idConversacion=${encodeURIComponent(id)}`);
+            if (!response.ok) return;
+            const items = await response.json();
+            const usuarioActual = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Context.Session.GetString("Usuario") ?? ""));
+            messages.innerHTML = items.length ? items.map(mensaje => {
+                const propio = usuarioActual === mensaje.remitenteNombre;
+                const fecha = new Date(mensaje.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const texto = document.createElement('p');
+                texto.textContent = mensaje.texto;
+                return `<div class="chat-message ${propio ? 'own' : ''}"><p>${texto.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p><time>${fecha}</time></div>`;
+            }).join('') : '<p class="chat-empty chat-empty-messages">Este chat está listo. Escribí el primer mensaje.</p>';
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        setInterval(cargarMensajes, 3000);
+    }
+</script>

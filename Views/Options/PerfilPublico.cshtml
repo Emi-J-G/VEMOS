@@ -36,7 +36,13 @@
         </div>
         @if (esAmigo)
         {
-            <span class="profile-text-button">Ya son amigos</span>
+            <form class="profile-friend-hover-form" method="post" action="/Options/Amigos/Eliminar">
+                <input type="hidden" name="idAmigo" value="@Model.id" />
+                <button class="profile-friend-hover-button" type="submit">
+                    <span class="profile-friend-label-default">Ya son amigos</span>
+                    <span class="profile-friend-label-hover">Eliminar amigo</span>
+                </button>
+            </form>
         }
         else
         {
@@ -45,6 +51,10 @@
                 <button class="profile-edit-link" type="submit">Agregar como amigo</button>
             </form>
         }
+        <form method="post" action="/Chat/Iniciar">
+            <input type="hidden" name="username" value="@Model.username" />
+            <button class="profile-edit-link" type="submit">Enviar mensaje</button>
+        </form>
     </div>
 
     <section class="profile-favorites-card public-profile-favorites" aria-labelledby="public-favorites-title">
