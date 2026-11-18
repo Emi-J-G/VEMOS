@@ -114,8 +114,25 @@ public class OptionsController : Controller
 
         ViewBag.Amigos = db.ObtenerAmigos(usuario.id);
         ViewBag.Busqueda = q?.Trim() ?? string.Empty;
-        ViewBag.ResultadosBusqueda = string.IsNullOrWhiteSpace(q)
-            ? Enumerable.Empty<Usuario>()
+        if (string.IsNullOrWhiteSpace(q))
+        {
+            ViewBag.ResultadosBusqueda = Enumerable.Empty<Usuario>();
+            return View("Amigos");
+        }
+
+        List<Restriccion> restriccionesUsuario = usuario.restricciones;
+        if (restriccionesUsuario == null || !restriccionesUsuario.Any())
+            restriccionesUsuario = db.GetRestriccionesByUsuario(usuario.username);
+
+        ViewBag.ResultadosBusqueda = (restriccionesUsuario != null && restriccionesUsuario.Any())
+            ? db.GetUsuariosByRestriccion(restriccionesUsuario)
+                .Where(resultado => resultado.id != usuario.id)
+                .Where(resultado =>
+                    (resultado.username ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    (resultado.nombre ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    (resultado.apellido ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    (resultado.email ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase))
+                .ToList()
             : db.BuscarUsuarios(q, usuario.id);
         return View("Amigos");
     }
@@ -198,7 +215,7 @@ public class OptionsController : Controller
         if (usuario == null)
             return Unauthorized();
 
-        RestauranteFavorito favorito = db.AlternarRestauranteFavorito(usuario.id, idRestaurante);
+        bool favorito = db.AlternarRestauranteFavorito(usuario.id, idRestaurante);
         return Ok(new { favorito });
     }
 

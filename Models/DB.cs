@@ -7,46 +7,24 @@ public class DB
 {
     string _connectionString = @"Server=localhost;Database=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
 
-    private static readonly Dictionary<string, (double lat, double lng)> CoordenadasRestaurantes =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["La Pampa"] = (-34.6037, -58.3816),
-            ["El Ateneo"] = (-34.5952, -58.3938),
-            ["Don Julio"] = (-34.5875, -58.4294),
-            ["Café Tortoni"] = (-34.6035, -58.3739),
-            ["Nomo"] = (-34.5947, -58.4022),
-            ["La Cabrera"] = (-34.5888, -58.4258),
-            ["Chila"] = (-34.6084, -58.3637),
-            ["Pizzería Güerrín"] = (-34.6044, -58.3926),
-            ["El Cuartito"] = (-34.6012, -58.3837),
-            ["Sarkis"] = (-34.5948, -58.4382),
-            ["La Brigada"] = (-34.6214, -58.3861)
-        };
+    private static readonly Dictionary<string, List<string>> RestriccionesRestaurantes = new();
 
-    private static readonly Dictionary<string, List<string>> RestriccionesRestaurantes =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["Don Julio"] = new() { "Celiaquía", "Diabetes" },
-            ["La Cabrera"] = new() { "Celiaquía", "Lactosa" },
-            ["Café Tortoni"] = new() { "Lactosa", "Vegetariano" },
-            ["Chila"] = new() { "Vegano", "Vegetariano", "Celiaquía" },
-            ["Pizzería Güerrín"] = new() { "Vegetariano" },
-            ["El Cuartito"] = new() { "Vegetariano" },
-            ["Sarkis"] = new() { "Vegano", "Vegetariano", "Halal" },
-            ["La Brigada"] = new() { "Celiaquía", "Kosher" }
-        };
+    private static readonly Dictionary<string, (double lat, double lng)> CoordenadasRestaurantes = new();
 
     private static readonly (double lat, double lng)[] CoordenadasFallback =
     {
-        (-34.5750, -58.4500),
-        (-34.5920, -58.3500),
-        (-34.6200, -58.4550),
-        (-34.6450, -58.3850),
-        (-34.5600, -58.4050),
-        (-34.6150, -58.3300),
-        (-34.6650, -58.4250),
-        (-34.6000, -58.4750)
+        (-34.6037, -58.3816)
     };
+
+    private static string NormalizarNombre(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            return string.Empty;
+
+        return string.Join(" ", nombre.Trim()
+            .ToLowerInvariant()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
 
     private void CargarRestriccionesUsuario(SqlConnection connection, Usuario usuario)
     {
@@ -76,11 +54,29 @@ public class DB
         }
         return restricciones;
     }
-
+    public List<Usuario> GetUsuariosByRestriccion(List<Restriccion> Restricciones) {
+        string query = @"SELECT DISTINCT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
+                        FROM Usuarios u INNER JOIN
+                        RestriccionesUsuarios ru ON u.id = ru.idUsuario 
+                        WHERE ru.idRestriccion = @idRestriccion";
+        List<Usuario> users = new List<Usuario>();
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            foreach (Restriccion r in Restricciones)
+            {
+                List<Usuario> encontrados = connection.Query<Usuario>(query, new { idRestriccion = r.id }).ToList();
+                users.AddRange(encontrados);
+            }
+        }
+        return users
+            .GroupBy(user => user.id)
+            .Select(group => group.First())
+            .ToList();
+    }
     public List<Restaurante> GetRestaurantes()
     {
-        string query = @"
-            SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo, r.idUsuario,
+        string query = 
+        @"SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo, r.idUsuario,
                    foto.foto
             FROM Restaurantes r
             OUTER APPLY (

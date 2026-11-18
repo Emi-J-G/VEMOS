@@ -36,20 +36,20 @@ public class LoginRegisController : Controller
     [HttpGet("/LoginRegis/GoogleResponse")]
     public async Task<IActionResult> GoogleResponse()
     {
-        AuthenticationResult result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        AuthenticateResult result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         if (!result.Succeeded || result.Principal == null)
         {
             return RedirectToAction("Index", "Home", new { mensaje = "No se pudo iniciar sesión con Google." });
         }
 
          ClaimsPrincipal claims = result.Principal;
-         string email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
-            ?? claims.FirstOrDefault(c => c.Type == "email")?.Value;
-        string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-            ?? claims.FirstOrDefault(c => c.Type == "name")?.Value
+         string email = claims.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value
+            ?? claims.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+        string name = claims.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+            ?? claims.Claims.FirstOrDefault(c => c.Type == "name")?.Value
             ?? email ?? "Usuario Google";
-        string apellido = claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value
-            ?? claims.FirstOrDefault(c => c.Type == "family_name")?.Value
+        string apellido = claims.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value
+            ?? claims.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value
             ?? string.Empty;
 
         DB db = new DB();
@@ -88,7 +88,7 @@ public class LoginRegisController : Controller
     [HttpPost("/LoginRegis/Registrar")]
     public IActionResult Registrar(string nombreUsuario, string nombre, string apellido, string contrasena, string email, string[] restricciones, string tipo)
     {
-        Restriccion restriccionesUsuario = (restricciones ?? Array.Empty<string>())
+        List<Restriccion> restriccionesUsuario = (restricciones ?? Array.Empty<string>())
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Select(r => new Restriccion { nombre = r })
             .ToList();

@@ -64,8 +64,8 @@ public class HomeController : Controller
 
         if (usuarioId > 0)
         {
-            PlatoFavorito platosFavoritos = db.ObtenerPlatosFavoritos(usuarioId);
-            RestauranteFavorito restaurantesFavoritos = db.ObtenerRestaurantesFavoritos(usuarioId);
+            List<Plato> platosFavoritos = db.ObtenerPlatosFavoritos(usuarioId);
+            List<Restaurante> restaurantesFavoritos = db.ObtenerRestaurantesFavoritos(usuarioId);
 
             ViewBag.PlatosFavoritos = platosFavoritos;
             ViewBag.RestaurantesFavoritos = restaurantesFavoritos;
@@ -90,8 +90,8 @@ public class HomeController : Controller
 
         DB db = new DB();
         string usuario = HttpContext.Session.GetString("Usuario");
-        Restriccion restricciones = db.GetRestriccionesByUsuario(usuario);
-        Restaurante restaurantes = db.GetRestaurantes();
+        List<Restriccion> restricciones = db.GetRestriccionesByUsuario(usuario);
+        List<Restaurante> restaurantes = db.GetRestaurantes();
 
         ViewBag.RestriccionesUsuario = restricciones;
         ViewBag.RestriccionesDisponibles = new[]
@@ -117,7 +117,7 @@ public class HomeController : Controller
         }
 
         DB db = new DB();
-        Restaurante restaurantes = db.GetRestaurantes();
+        List<Restaurante> restaurantes = db.GetRestaurantes();
         Restaurante restaurante = restaurantes
             .FirstOrDefault(r => string.Equals(r.nombre, nombre, StringComparison.OrdinalIgnoreCase));
 
@@ -139,7 +139,7 @@ public class HomeController : Controller
         ViewBag.Query = q?.Trim() ?? string.Empty;
         ViewBag.Filtro = filtro ?? string.Empty;
 
-        Restaurante restaurantes = new DB().GetRestaurantes();
+        List<Restaurante> restaurantes = new DB().GetRestaurantes();
         if (!string.IsNullOrWhiteSpace(q))
         {
             restaurantes = restaurantes
