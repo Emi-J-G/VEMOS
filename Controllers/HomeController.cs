@@ -60,7 +60,15 @@ public class HomeController : Controller
         ViewBag.filtrosActivos = filtrosActivos;
 
         Usuario usuarioSesion = ObtenerUsuarioSesion();
-        int usuarioId = usuarioSesion?.id ?? 0;
+        int usuarioId;
+        if (usuarioSesion != null)
+        {
+            usuarioId = usuarioSesion.id;
+        }
+        else
+        {
+            usuarioId = 0;
+        }
 
         if (usuarioId > 0)
         {
@@ -84,9 +92,7 @@ public class HomeController : Controller
     public IActionResult Mapa()
     {
         if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
-        {
             return RedirectToAction("Index");
-        }
 
         DB db = new DB();
         string usuario = HttpContext.Session.GetString("Usuario");
@@ -95,16 +101,7 @@ public class HomeController : Controller
 
         ViewBag.RestriccionesUsuario = restricciones;
         ViewBag.RestriccionesDisponibles = new[]
-        {
-            "Celiaquía",
-            "Diabetes",
-            "Kosher",
-            "Halal",
-            "Lactosa",
-            "Vegano",
-            "Vegetariano",
-            "Alergias"
-        };
+            db.GetRestricciones();
 
         return View(restaurantes);
     }
@@ -112,9 +109,7 @@ public class HomeController : Controller
     public IActionResult DetalleRestaurante(string nombre)
     {
         if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
-        {
             return RedirectToAction("Index");
-        }
 
         DB db = new DB();
         List<Restaurante> restaurantes = db.GetRestaurantes();
@@ -122,13 +117,10 @@ public class HomeController : Controller
             .FirstOrDefault(r => string.Equals(r.nombre, nombre, StringComparison.OrdinalIgnoreCase));
 
         if (restaurante == null)
-        {
             return NotFound();
-        }
 
         Usuario usuario = ObtenerUsuarioSesion();
-        ViewBag.EsFavorito = usuario != null &&
-            db.ObtenerIdsRestaurantesFavoritos(usuario.id).Contains(restaurante.id);
+        ViewBag.EsFavorito = usuario != null && db.ObtenerIdsRestaurantesFavoritos(usuario.id).Contains(restaurante.id);
 
         return View(restaurante);
     }
@@ -136,16 +128,53 @@ public class HomeController : Controller
     [HttpGet("/Buscar")]
     public IActionResult Buscar(string q, string filtro)
     {
-        ViewBag.Query = q?.Trim() ?? string.Empty;
-        ViewBag.Filtro = filtro ?? string.Empty;
+        string query = q;
+        if (query == null)
+                query = string.Empty;
+    
+        else
+            query = query.Trim();
+
+        string filtroActual = filtro;
+        if (filtroActual == null)
+            filtroActual = string.Empty;
+
+        ViewBag.Query = query;
+        ViewBag.Filtro = filtroActual;
 
         List<Restaurante> restaurantes = new DB().GetRestaurantes();
-        if (!string.IsNullOrWhiteSpace(q))
+        if (!string.IsNullOrWhiteSpace(query))
         {
             restaurantes = restaurantes
-                .Where(r => (r.nombre ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase)
-                    || (r.direccion ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase)
-                    || (r.descripcion ?? string.Empty).Contains(q, StringComparison.OrdinalIgnoreCase))
+                .Where(r =>
+                {
+                    string nombre = r.nombre;
+                    if (nombre == null)
+                        nombre = string.Empty;
+
+                    string direccion = r.direccion;
+                    if (direccion == null)
+                        direccion = string.Empty;
+
+                    string descripcion = r.descripcion;
+                    if (descripcion == null)
+                        descripcion = string.Empty;
+
+                    bool coincideNombre = nombre.Contains(query, StringComparison.OrdinalIgnoreCase);
+                    bool coincideDireccion = direccion.Contains(query, StringComparison.OrdinalIgnoreCase);
+                    bool coincideDescripcion = descripcion.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+                    if (coincideNombre)
+                        return true;
+                        
+                    if (coincideDireccion)
+                        return true;
+                        
+                    if (coincideDescripcion)
+                        return true;
+                        
+                    return false;
+                })
                 .ToList();
         }
 

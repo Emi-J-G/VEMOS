@@ -6,7 +6,7 @@ namespace VEMOS.Controllers;
 
 public class OptionsController : Controller
 {
-    private Usuario? ObtenerUsuarioSesion()
+    private Usuario ObtenerUsuarioSesion()
     {
         string datosUsuario = HttpContext.Session.GetString("UsuarioActual");
         if (string.IsNullOrWhiteSpace(datosUsuario))
@@ -112,9 +112,19 @@ public class OptionsController : Controller
         if (usuario == null)
             return RedirectToAction("Index", "Home");
 
+        string busqueda = q;
+        if (busqueda == null)
+        {
+            busqueda = string.Empty;
+        }
+        else
+        {
+            busqueda = busqueda.Trim();
+        }
+
         ViewBag.Amigos = db.ObtenerAmigos(usuario.id);
-        ViewBag.Busqueda = q?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(q))
+        ViewBag.Busqueda = busqueda;
+        if (string.IsNullOrWhiteSpace(busqueda))
         {
             ViewBag.ResultadosBusqueda = Enumerable.Empty<Usuario>();
             return View("Amigos");
@@ -124,7 +134,7 @@ public class OptionsController : Controller
         if (restriccionesUsuario == null || !restriccionesUsuario.Any())
             restriccionesUsuario = db.GetRestriccionesByUsuario(usuario.username);
 
-        List<Usuario> resultados = db.BuscarUsuariosPorTextoORestriccion(q, usuario.id);
+        List<Usuario> resultados = db.BuscarUsuariosPorTextoORestriccion(busqueda, usuario.id);
 
         if (restriccionesUsuario != null && restriccionesUsuario.Any())
         {
@@ -150,7 +160,17 @@ public class OptionsController : Controller
         if (usuarioActual == null)
             return RedirectToAction("Index", "Home");
 
-        Usuario perfil = db.ObtenerPerfilPublico(username?.Trim() ?? string.Empty);
+        string usernameLimpio = username;
+        if (usernameLimpio == null)
+        {
+            usernameLimpio = string.Empty;
+        }
+        else
+        {
+            usernameLimpio = usernameLimpio.Trim();
+        }
+
+        Usuario perfil = db.ObtenerPerfilPublico(usernameLimpio);
         if (perfil == null || perfil.id == usuarioActual.id)
             return RedirectToAction(nameof(Amigos));
 
@@ -258,7 +278,13 @@ public class OptionsController : Controller
         if (usuario == null)
             return Unauthorized();
 
-        db.ActualizarRestriccionesUsuario(usuario.id, restricciones ?? Array.Empty<string>());
+        string[] restriccionesActuales = restricciones;
+        if (restriccionesActuales == null)
+        {
+            restriccionesActuales = Array.Empty<string>();
+        }
+
+        db.ActualizarRestriccionesUsuario(usuario.id, restriccionesActuales);
         usuario.restricciones = db.GetRestriccionesByUsuario(usuario.username);
         HttpContext.Session.SetString("UsuarioActual", JsonSerializer.Serialize(usuario));
         return Ok(new { restricciones = usuario.restricciones.Select(restriccion => restriccion.nombre) });
@@ -270,7 +296,7 @@ public class OptionsController : Controller
     }
 
     [HttpGet("/Chat")]
-    public IActionResult Chat(int? idConversacion = null)
+    public IActionResult Chat(int idConversacion = 0)
     {
         Usuario usuario = ObtenerUsuarioSesion();
         if (usuario == null)
@@ -281,43 +307,77 @@ public class OptionsController : Controller
         DB db = new DB();
         List<ConversacionChat> conversaciones = db.ObtenerConversacionesChat(usuario.id);
 
-        int conversacionActiva = idConversacion ?? conversaciones.FirstOrDefault()?.id ?? 0;
-        Usuario? otroUsuario = conversacionActiva > 0
-            ? db.ObtenerUsuarioConversacion(conversacionActiva, usuario.id)
-            : null;
+        int conversacionActiva = idConversacion;
+        if (conversacionActiva <= 0)
+        {
+            ConversacionChat primeraConversacion = conversaciones.FirstOrDefault();
+            if (primeraConversacion != null)
+            {
+                conversacionActiva = primeraConversacion.id;
+            }
+            else
+            {
+                conversacionActiva = 0;
+            }
+        }
+
+        Usuario otroUsuario = null;
+        if (conversacionActiva > 0)
+        {
+            otroUsuario = db.ObtenerUsuarioConversacion(conversacionActiva, usuario.id);
+        }
+
+        List<MensajeChatViewModel> mensajes = new List<MensajeChatViewModel>();
+        if (conversacionActiva > 0 && otroUsuario != null)
+        {
+            mensajes = db.ObtenerMensajesChat(conversacionActiva)
+                .Select(mensaje => CrearMensajeViewModel(mensaje, usuario.username))
+                .ToList();
+        }
 
         ViewBag.Conversaciones = conversaciones;
         ViewBag.ConversacionActiva = conversacionActiva;
         ViewBag.OtroUsuario = otroUsuario;
-        ViewBag.Mensajes = conversacionActiva > 0 && otroUsuario != null
-            ? db.ObtenerMensajesChat(conversacionActiva)
-                .Select(mensaje => CrearMensajeViewModel(mensaje, usuario.username))
-                .ToList()
-            : new List<MensajeChatViewModel>();
+        ViewBag.Mensajes = mensajes;
 
-        string nombreOtroUsuario = otroUsuario == null
-            ? string.Empty
-            : string.Join(" ", new[] { otroUsuario.nombre, otroUsuario.apellido }
+        string nombreOtroUsuario = string.Empty;
+        if (otroUsuario != null)
+        {
+            nombreOtroUsuario = string.Join(" ", new[] { otroUsuario.nombre, otroUsuario.apellido }
                 .Where(valor => !string.IsNullOrWhiteSpace(valor)));
+        }
+
+        string usernameOtroUsuario = string.Empty;
+        if (otroUsuario != null)
+        {
+            if (!string.IsNullOrWhiteSpace(otroUsuario.username))
+            {
+                usernameOtroUsuario = otroUsuario.username;
+            }
+        }
+
+        string nombreMostradoOtroUsuario = nombreOtroUsuario;
+        if (string.IsNullOrWhiteSpace(nombreMostradoOtroUsuario))
+        {
+            nombreMostradoOtroUsuario = usernameOtroUsuario;
+        }
+
+        string inicialOtroUsuario = "U";
+        if (otroUsuario != null && !string.IsNullOrWhiteSpace(otroUsuario.username))
+        {
+            inicialOtroUsuario = otroUsuario.username.Trim()[0].ToString().ToUpperInvariant();
+        }
 
         ChatViewModel modelo = new ChatViewModel
         {
             Conversaciones = conversaciones.Select(conversacion => CrearConversacionViewModel(conversacion, conversacionActiva)).ToList(),
-            Mensajes = conversacionActiva > 0 && otroUsuario != null
-                ? db.ObtenerMensajesChat(conversacionActiva)
-                    .Select(mensaje => CrearMensajeViewModel(mensaje, usuario.username))
-                    .ToList()
-                : new List<MensajeChatViewModel>(),
+            Mensajes = mensajes,
             ConversacionActiva = conversacionActiva,
             UsuarioActual = usuario.username,
             HayConversacionSeleccionada = otroUsuario != null,
-            NombreOtroUsuario = string.IsNullOrWhiteSpace(nombreOtroUsuario)
-                ? (otroUsuario?.username ?? string.Empty)
-                : nombreOtroUsuario,
-            InicialOtroUsuario = otroUsuario != null && !string.IsNullOrWhiteSpace(otroUsuario.username)
-                ? otroUsuario.username.Trim()[0].ToString().ToUpperInvariant()
-                : "U",
-            UsernameOtroUsuario = otroUsuario?.username ?? string.Empty
+            NombreOtroUsuario = nombreMostradoOtroUsuario,
+            InicialOtroUsuario = inicialOtroUsuario,
+            UsernameOtroUsuario = usernameOtroUsuario
         };
 
         return View("Chat", modelo);
@@ -331,14 +391,30 @@ public class OptionsController : Controller
         string nombre = string.Join(" ", new[] { persona.nombre, persona.apellido }
             .Where(valor => !string.IsNullOrWhiteSpace(valor)));
 
+        string nombreUsuario = nombre;
+        if (string.IsNullOrWhiteSpace(nombreUsuario))
+        {
+            nombreUsuario = persona.username;
+        }
+
+        string inicial = "U";
+        if (!string.IsNullOrWhiteSpace(persona.username))
+        {
+            inicial = persona.username.Trim()[0].ToString().ToUpperInvariant();
+        }
+
+        string ultimoMensaje = "Iniciar conversación";
+        if (conversacion.ultimoMensaje != null)
+        {
+            ultimoMensaje = conversacion.ultimoMensaje.texto;
+        }
+
         return new ConversacionChatViewModel
         {
             Id = conversacion.id,
-            NombreUsuario = string.IsNullOrWhiteSpace(nombre) ? persona.username : nombre,
-            Inicial = !string.IsNullOrWhiteSpace(persona.username)
-                ? persona.username.Trim()[0].ToString().ToUpperInvariant()
-                : "U",
-            UltimoMensaje = conversacion.ultimoMensaje?.texto ?? "Iniciar conversación",
+            NombreUsuario = nombreUsuario,
+            Inicial = inicial,
+            UltimoMensaje = ultimoMensaje,
             Activa = conversacion.id == conversacionActiva
         };
     }
