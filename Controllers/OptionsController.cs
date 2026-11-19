@@ -274,7 +274,9 @@ public class OptionsController : Controller
     {
         Usuario usuario = ObtenerUsuarioSesion();
         if (usuario == null)
+        {
             return RedirectToAction("Index", "Home");
+        }
 
         DB db = new DB();
         List<ConversacionChat> conversaciones = db.ObtenerConversacionesChat(usuario.id);
@@ -289,56 +291,84 @@ public class OptionsController : Controller
         ViewBag.OtroUsuario = otroUsuario;
         ViewBag.Mensajes = conversacionActiva > 0 && otroUsuario != null
             ? db.ObtenerMensajesChat(conversacionActiva)
-            : new List<MensajeChat>();
+                .Select(mensaje => CrearMensajeViewModel(mensaje, usuario.username))
+                .ToList()
+            : new List<MensajeChatViewModel>();
 
-        return View("Chat");
+        string nombreOtroUsuario = otroUsuario == null
+            ? string.Empty
+            : string.Join(" ", new[] { otroUsuario.nombre, otroUsuario.apellido }
+                .Where(valor => !string.IsNullOrWhiteSpace(valor)));
+
+        ChatViewModel modelo = new ChatViewModel
+        {
+            Conversaciones = conversaciones.Select(conversacion => CrearConversacionViewModel(conversacion, conversacionActiva)).ToList(),
+            Mensajes = conversacionActiva > 0 && otroUsuario != null
+                ? db.ObtenerMensajesChat(conversacionActiva)
+                    .Select(mensaje => CrearMensajeViewModel(mensaje, usuario.username))
+                    .ToList()
+                : new List<MensajeChatViewModel>(),
+            ConversacionActiva = conversacionActiva,
+            UsuarioActual = usuario.username,
+            HayConversacionSeleccionada = otroUsuario != null,
+            NombreOtroUsuario = string.IsNullOrWhiteSpace(nombreOtroUsuario)
+                ? (otroUsuario?.username ?? string.Empty)
+                : nombreOtroUsuario,
+            InicialOtroUsuario = otroUsuario != null && !string.IsNullOrWhiteSpace(otroUsuario.username)
+                ? otroUsuario.username.Trim()[0].ToString().ToUpperInvariant()
+                : "U",
+            UsernameOtroUsuario = otroUsuario?.username ?? string.Empty
+        };
+
+        return View("Chat", modelo);
     }
 
-    [HttpPost("/Chat/Iniciar")]
-    public IActionResult IniciarChat([FromForm] string username)
+    private static ConversacionChatViewModel CrearConversacionViewModel(
+        ConversacionChat conversacion,
+        int conversacionActiva)
     {
-        Usuario usuario = ObtenerUsuarioSesion();
-        if (usuario == null)
-            return RedirectToAction("Index", "Home");
+        Usuario persona = conversacion.otroUsuario;
+        string nombre = string.Join(" ", new[] { persona.nombre, persona.apellido }
+            .Where(valor => !string.IsNullOrWhiteSpace(valor)));
 
-        DB db = new DB();
-        Usuario? destino = db.ObtenerPerfilPublico(username?.Trim() ?? string.Empty);
-        if (destino == null || destino.id == usuario.id)
-            return RedirectToAction(nameof(Amigos), new { mensaje = "No se pudo iniciar ese chat." });
-
-        int conversacionId = db.ObtenerOCrearConversacion(usuario.id, destino.id);
-        return Redirect($"/Chat?idConversacion={conversacionId}");
+        return new ConversacionChatViewModel
+        {
+            Id = conversacion.id,
+            NombreUsuario = string.IsNullOrWhiteSpace(nombre) ? persona.username : nombre,
+            Inicial = !string.IsNullOrWhiteSpace(persona.username)
+                ? persona.username.Trim()[0].ToString().ToUpperInvariant()
+                : "U",
+            UltimoMensaje = conversacion.ultimoMensaje?.texto ?? "Iniciar conversación",
+            Activa = conversacion.id == conversacionActiva
+        };
     }
 
-    [HttpPost("/Chat/Enviar")]
-    public IActionResult EnviarMensaje([FromForm] int idConversacion, [FromForm] string texto)
+    private static MensajeChatViewModel CrearMensajeViewModel(
+        MensajeChat mensaje,
+        string usuarioActual)
     {
-        Usuario usuario = ObtenerUsuarioSesion();
-        if (usuario == null)
-            return Unauthorized();
+        TimeZoneInfo zonaArgentina = ObtenerZonaArgentina();
+        DateTime fechaUtc = DateTime.SpecifyKind(mensaje.fecha, DateTimeKind.Utc);
+        DateTime fechaArgentina = TimeZoneInfo.ConvertTimeFromUtc(fechaUtc, zonaArgentina);
 
-        if (string.IsNullOrWhiteSpace(texto))
-            return BadRequest(new { message = "Escribí un mensaje." });
-
-        DB db = new DB();
-        if (!db.UsuarioPerteneceAConversacion(usuario.id, idConversacion))
-            return Forbid();
-
-        db.AgregarMensajeChat(idConversacion, usuario.id, texto.Trim().Length > 1000 ? texto.Trim()[..1000] : texto.Trim());
-        return Ok(new { message = "Mensaje enviado." });
+        return new MensajeChatViewModel
+        {
+            Texto = mensaje.texto,
+            RemitenteNombre = mensaje.remitenteNombre,
+            Hora = fechaArgentina.ToString("HH:mm"),
+            Propio = string.Equals(usuarioActual, mensaje.remitenteNombre, StringComparison.Ordinal)
+        };
     }
 
-    [HttpGet("/Chat/Mensajes")]
-    public IActionResult ObtenerMensajes(int idConversacion)
+    private static TimeZoneInfo ObtenerZonaArgentina()
     {
-        Usuario usuario = ObtenerUsuarioSesion();
-        if (usuario == null)
-            return Unauthorized();
-
-        DB db = new DB();
-        if (!db.UsuarioPerteneceAConversacion(usuario.id, idConversacion))
-            return Forbid();
-
-        return Json(db.ObtenerMensajesChat(idConversacion));
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Argentina Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
+        }
     }
 }

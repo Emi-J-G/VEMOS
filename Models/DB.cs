@@ -577,7 +577,16 @@ public class DB
                 ORDER BY m.fecha, m.id;";
 
             using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
+            List<MensajeChat> mensajes = connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
+
+            // SQL Server guarda estas columnas con SYSUTCDATETIME(): indicar UTC evita
+            // que se serialicen como hora local o que el navegador las interprete mal.
+            foreach (MensajeChat mensaje in mensajes)
+            {
+                mensaje.fecha = DateTime.SpecifyKind(mensaje.fecha, DateTimeKind.Utc);
+            }
+
+            return mensajes;
         }
 
         public Usuario? ObtenerUsuarioConversacion(int idConversacion, int idUsuarioActual)
@@ -632,6 +641,13 @@ public class DB
             {
                 conversacion.ultimoMensaje = connection.QueryFirstOrDefault<MensajeChat>(
                     ultimoQuery, new { idConversacion = conversacion.id });
+
+                if (conversacion.ultimoMensaje != null)
+                {
+                    conversacion.ultimoMensaje.fecha = DateTime.SpecifyKind(
+                        conversacion.ultimoMensaje.fecha,
+                        DateTimeKind.Utc);
+                }
             }
 
             return filas;
