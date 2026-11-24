@@ -1,14 +1,7 @@
-@model VEMOS.Models.Restaurante
+@model VEMOS.Models.DetalleRestauranteViewModel
 @{
     Layout = "_Layout";
-    ViewData["Title"] = Model?.nombre ?? "Restaurante";
-    bool esFavorito = ViewBag.EsFavorito is bool favorito && favorito;
-    string foto = Model?.foto?.Trim();
-    string fotoUrl = string.IsNullOrWhiteSpace(foto)
-        ? string.Empty
-        : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            ? foto
-            : Url.Content($"~/Images/{foto}"));
+    ViewData["Title"] = Model.Restaurante.nombre;
 }
 
 @section Styles {
@@ -23,41 +16,35 @@
     <article class="restaurant-detail-card">
         <div class="restaurant-detail-hero">
             <div class="restaurant-detail-image">
-                @if (string.IsNullOrWhiteSpace(fotoUrl))
+                @if (string.IsNullOrWhiteSpace(Model.FotoUrl))
                 {
                     <span class="restaurant-no-image">No hay imagen disponible</span>
                 }
                 else
                 {
-                    <img src="@fotoUrl" alt="Exterior de @Model.nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                    <img src="@Model.FotoUrl" alt="Exterior de @Model.Restaurante.nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
                     <span class="restaurant-no-image" hidden>No hay imagen disponible</span>
                 }
                 <span class="restaurant-detail-photo-tag">★ Recomendado por la comunidad</span>
             </div>
             <div class="restaurant-detail-hero-copy">
-                <div class="restaurant-detail-badge">@Model.tipo</div>
-                <h1>@Model.nombre</h1>
-                <p>@Model.descripcion</p>
-                <div class="restaurant-detail-meta"><span>@Model.tipo</span><span>•</span><span>@Model.direccion</span></div>
+                <div class="restaurant-detail-badge">@Model.Restaurante.tipo</div>
+                <h1>@Model.Restaurante.nombre</h1>
+                <p>@Model.Restaurante.descripcion</p>
+                <div class="restaurant-detail-meta"><span>@Model.Restaurante.tipo</span><span>•</span><span>@Model.Restaurante.direccion</span></div>
             </div>
         </div>
 
         <div class="restaurant-detail-content">
             <div class="restaurant-detail-info">
-                <div class="detail-item">
-                    <span class="detail-label">Dirección</span>
-                    <strong>@Model.direccion</strong>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Teléfono</span>
-                    <strong>@Model.telefono</strong>
-                </div>
+                <div class="detail-item"><span class="detail-label">Dirección</span><strong>@Model.Restaurante.direccion</strong></div>
+                <div class="detail-item"><span class="detail-label">Teléfono</span><strong>@Model.Restaurante.telefono</strong></div>
                 <div class="detail-item">
                     <span class="detail-label">Apto para</span>
                     <div class="detail-tags">
-                        @if (Model.restricciones != null && Model.restricciones.Any())
+                        @if (Model.Restaurante.restricciones != null && Model.Restaurante.restricciones.Count > 0)
                         {
-                            foreach (string restriccion in Model.restricciones)
+                            foreach (string restriccion in Model.Restaurante.restricciones)
                             {
                                 <span class="detail-tag">@restriccion</span>
                             }
@@ -68,17 +55,12 @@
                         }
                     </div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Horarios</span>
-                    <strong>Lun a dom · 12:00 a 23:30</strong>
-                </div>
+                <div class="detail-item"><span class="detail-label">Horarios</span><strong>Lun a dom · 12:00 a 23:30</strong></div>
             </div>
 
             <div class="restaurant-detail-actions">
                 <a class="restaurant-action-primary" href="/Home/Mapa">Ver en el mapa</a>
-                <button type="button" class="restaurant-action-secondary" id="favorite-restaurant-button" data-restaurant-id="@Model.id">
-                    @(esFavorito ? "Quitar de favoritos" : "Guardar favorito")
-                </button>
+                <button type="button" class="restaurant-action-secondary" id="favorite-restaurant-button" data-restaurant-id="@Model.Restaurante.id">@Model.TextoFavorito</button>
             </div>
         </div>
     </article>
@@ -96,8 +78,7 @@
     <script>
         document.getElementById('favorite-restaurant-button')?.addEventListener('click', async function () {
             const response = await fetch('/Options/Favoritos/Toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ idRestaurante: this.dataset.restaurantId })
             });
             if (!response.ok) return;

@@ -29,9 +29,7 @@ public class OptionsController : Controller
     {
         Usuario usuario = ObtenerUsuarioSesion();
         if (usuario == null)
-        {
             return RedirectToAction("Index", "Home");
-        }
 
         ViewBag.Mensaje = mensaje;
         DB db = new DB();
@@ -46,9 +44,7 @@ public class OptionsController : Controller
     {
         Usuario usuario = ObtenerUsuarioSesion();
         if (usuario == null)
-        {
             return RedirectToAction("Index", "Home");
-        }
 
         DB db = new DB();
         ViewBag.Favoritos = db.ObtenerRestaurantesFavoritos(usuario.id);

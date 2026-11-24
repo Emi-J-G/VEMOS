@@ -1,43 +1,11 @@
-@model IEnumerable<VEMOS.Models.Restaurante>
+@model VEMOS.Models.MapaViewModel
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Mapa";
-
-    IEnumerable<Restriccion> restriccionesUsuario = ViewBag.RestriccionesUsuario as IEnumerable<Restriccion> ?? new List<Restriccion>();
-    string[] restriccionesTodos = ViewBag.RestriccionesDisponibles as string[] ?? new[]
-    {
-        "Celiaquía",
-        "Diabetes",
-        "Kosher",
-        "Halal",
-        "Lactosa",
-        "Vegano",
-        "Vegetariano",
-        "Alergias"
-    };
-
-    HashSet<string> nombresUsuario = new HashSet<string>(
-        restriccionesUsuario
-            .Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre))
-            .Select(r => NormalizarRestriccion(r.nombre)),
-        StringComparer.OrdinalIgnoreCase);
-
-    List<VEMOS.Models.Restaurante> restaurantes = Model?.ToList() ?? new List<VEMOS.Models.Restaurante>();
-
-    string NormalizarRestriccion(string? nombre)
-    {
-        return (nombre ?? string.Empty)
-            .Normalize(System.Text.NormalizationForm.FormD)
-            .Where(caracter => char.IsLetterOrDigit(caracter) &&
-                               System.Globalization.CharUnicodeInfo.GetUnicodeCategory(caracter) !=
-                               System.Globalization.UnicodeCategory.NonSpacingMark)
-            .Aggregate(new System.Text.StringBuilder(), (builder, caracter) => builder.Append(char.ToLowerInvariant(caracter)))
-            .ToString()
-            .Trim();
-    }
 }
 
 @section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="~/css/pages/mapa.css" asp-append-version="true" />
 }
 
@@ -62,179 +30,29 @@
         <div class="map-filter-bar">
             <div class="map-filter-header">
                 <strong>Filtrar por restricciones</strong>
-                <span id="mapFilterSummary">@restriccionesUsuario.Count() activas</span>
+                <span id="mapFilterSummary">@Model.CantidadRestriccionesActivas activas</span>
             </div>
 
             <div class="map-filter-list" id="mapFilterList">
-                @foreach (string restriccion in restriccionesTodos)
+                @foreach (MapaFiltroViewModel filtro in Model.Filtros)
                 {
-                    bool estaActiva = nombresUsuario.Contains(NormalizarRestriccion(restriccion));
                     <label class="map-filter-option">
-                        <input type="checkbox" value="@restriccion" checked="@estaActiva" class="map-filter-checkbox" />
-                        <span>@restriccion</span>
+                        <input type="checkbox" value="@filtro.Nombre" checked="@filtro.Activo" class="map-filter-checkbox" />
+                        <span>@filtro.Nombre</span>
                     </label>
                 }
             </div>
         </div>
 
-        <div id="map" aria-label="Mapa de restaurantes"></div>
+        <div id="map"
+             aria-label="Mapa de restaurantes"
+             data-restaurantes="@Model.RestaurantesJson"
+             data-restricciones-usuario="@Model.RestriccionesUsuarioJson"
+             data-restricciones-todos="@Model.RestriccionesTodosJson"></div>
     </div>
 </section>
 
 @section Scripts {
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-    <script>
-        const restaurantes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(restaurantes.Select(r => new {
-            id = r.id,
-            nombre = r.nombre,
-            lat = r.lat,
-            lng = r.lng,
-            descripcion = r.descripcion,
-            restricciones = r.restricciones ?? new List<string>()
-        })));
-
-        const usuariosRestricciones = [
-            @foreach (string restriccion in restriccionesUsuario.Where(r => r != null && !string.IsNullOrWhiteSpace(r.nombre)).Select(r => r.nombre.Trim()))
-            {
-                <text>"@restriccion",</text>
-            }
-        ];
-        const allRestrictions = [
-            @foreach (string restriccion in restriccionesTodos)
-            {
-                <text>"@restriccion",</text>
-            }
-        ];
-
-        const map = L.map('map', {
-            zoomControl: true,
-            attributionControl: true
-        }).setView([-34.6037, -58.3816], 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        const markers = new Map();
-
-        function normalizeRestriction(value) {
-            return (value || '')
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .trim()
-                .toLowerCase();
-        }
-
-        function getSelectedRestrictions() {
-            return [...document.querySelectorAll('.map-filter-checkbox:checked')]
-                .map(input => input.value);
-        }
-
-        function updateFilterSummary(selected) {
-            const summary = document.getElementById('mapFilterSummary');
-            summary.textContent = selected.length > 0
-                ? `${selected.length} activas`
-                : 'Sin filtros activos';
-        }
-
-        function createPopupContent(restaurante) {
-            return `
-                <div class="map-popup">
-                    <strong>${restaurante.nombre}</strong>
-                    <span>${restaurante.descripcion}</span>
-                    <small>${(restaurante.restricciones || []).join(', ') || 'Sin restricciones cargadas'}</small>
-                    <div class="map-popup-actions">
-                        <a class="map-popup-link" href="/Home/DetalleRestaurante?nombre=${encodeURIComponent(restaurante.nombre)}">Ver información</a>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderMarkers() {
-            const selectedRestrictions = getSelectedRestrictions();
-            updateFilterSummary(selectedRestrictions);
-
-            markers.forEach((marker) => map.removeLayer(marker));
-            markers.clear();
-
-            const restaurantesFiltrados = restaurantes.filter((restaurante) => {
-                if (selectedRestrictions.length === 0) {
-                    return true;
-                }
-
-                return selectedRestrictions.every((restriccion) =>
-                    (restaurante.restricciones || []).some((disponible) =>
-                        normalizeRestriction(disponible) === normalizeRestriction(restriccion)));
-            });
-
-            restaurantesFiltrados.forEach((restaurante) => {
-                const marker = L.marker([restaurante.lat, restaurante.lng])
-                    .bindPopup(createPopupContent(restaurante));
-
-                marker.addTo(map);
-                markers.set(`${restaurante.nombre}-${restaurante.lat}`, marker);
-            });
-
-            if (restaurantesFiltrados.length === 0) {
-                const emptyMessage = L.popup()
-                    .setLatLng([-34.6037, -58.3816])
-                    .setContent('<div class="map-popup"><strong>No hay restaurantes</strong><br>Probá otra combinación de restricciones.</div>');
-                emptyMessage.addTo(map);
-                setTimeout(() => emptyMessage.closePopup(), 2500);
-            }
-        }
-
-        renderMarkers();
-
-        document.querySelectorAll('.map-filter-checkbox').forEach((checkbox) => {
-            checkbox.addEventListener('change', renderMarkers);
-        });
-
-        const searchInput = document.getElementById('mapSearch');
-        searchInput.addEventListener('input', function () {
-            const text = this.value.trim().toLowerCase();
-            const selectedRestrictions = getSelectedRestrictions();
-
-            markers.forEach((marker) => map.removeLayer(marker));
-            markers.clear();
-
-            const restaurantesFiltrados = restaurantes.filter((restaurante) => {
-                const coincidenRestriccion = selectedRestrictions.length === 0 || selectedRestrictions.every((r) =>
-                    (restaurante.restricciones || []).some((disponible) =>
-                        normalizeRestriction(disponible) === normalizeRestriction(r)));
-                const coincidenTexto = !text || (restaurante.nombre || '').toLowerCase().includes(text) || (restaurante.descripcion || '').toLowerCase().includes(text);
-                return coincidenRestriccion && coincidenTexto;
-            });
-
-            restaurantesFiltrados.forEach((restaurante) => {
-                const marker = L.marker([restaurante.lat, restaurante.lng])
-                    .bindPopup(createPopupContent(restaurante));
-                marker.addTo(map);
-                markers.set(`${restaurante.nombre}-${restaurante.lat}`, marker);
-            });
-        });
-
-        document.getElementById('locateBtn').addEventListener('click', function () {
-            if (!navigator.geolocation) {
-                alert('Tu navegador no soporta geolocalización.');
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(function (position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                const marker = L.marker([lat, lng])
-                    .addTo(map)
-                    .bindPopup('<div class="map-popup"><strong>Tu ubicación</strong></div>');
-
-                map.setView([lat, lng], 15);
-                setTimeout(() => marker.openPopup(), 200);
-            }, function () {
-                alert('No pudimos obtener tu ubicación.');
-            });
-        });
-    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="~/js/mapa.js" asp-append-version="true"></script>
 }

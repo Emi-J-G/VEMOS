@@ -7,25 +7,6 @@ public class DB
 {
     string _connectionString = @"Server=localhost;Database=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
 
-    private static readonly Dictionary<string, List<string>> RestriccionesRestaurantes = new();
-
-    private static readonly Dictionary<string, (double lat, double lng)> CoordenadasRestaurantes = new();
-
-    private static readonly (double lat, double lng)[] CoordenadasFallback =
-    {
-        (-34.6037, -58.3816)
-    };
-
-    private static string NormalizarNombre(string nombre)
-    {
-        if (string.IsNullOrWhiteSpace(nombre))
-            return string.Empty;
-
-        return string.Join(" ", nombre.Trim()
-            .ToLowerInvariant()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries));
-    }
-
     private void CargarRestriccionesUsuario(SqlConnection connection, Usuario usuario)
     {
         if (usuario == null)
@@ -40,11 +21,17 @@ public class DB
         usuario.restricciones = restricciones;
     }
 
+    public List<Restriccion> GetRestricciones() {
+        const string query = @"SELECT id, nombre, descripcion FROM Restricciones";
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        return connection.Query<Restriccion>(query).ToList();
+    }
+
     public void EliminarAmigo(int idUsuario, int idAmigo)
     {
         const string query = @"DELETE FROM Amigos
-                               WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
-                                  OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)";
+                                WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
+                                OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)";
 
         using SqlConnection connection = new SqlConnection(_connectionString);
         connection.Execute(query, new { idUsuario, idAmigo });
@@ -85,78 +72,38 @@ public class DB
     }
     public List<Restaurante> GetRestaurantes()
     {
-        string query = 
-        @"SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo, r.idUsuario,
-                   foto.foto
-            FROM Restaurantes r
-            OUTER APPLY (
-                SELECT TOP 1 fr.foto
-                FROM FotosRestaurantes fr
-                WHERE fr.idRestaurante = r.id
-                ORDER BY fr.id
-            ) foto
-            ORDER BY r.nombre";
+        const string query = @"SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo,
+                                      r.idUsuario, r.lat, r.lng, foto.foto
+                               FROM Restaurantes r
+                               OUTER APPLY (
+                                   SELECT TOP 1 fr.foto
+                                   FROM FotosRestaurantes fr
+                                   WHERE fr.idRestaurante = r.id
+                                   ORDER BY fr.id
+                               ) foto
+                               ORDER BY r.nombre";
 
-        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using SqlConnection connection = new SqlConnection(_connectionString);
+        connection.Open();
+
+        List<Restaurante> restaurantes = connection.Query<Restaurante>(query)
+            .Where(restaurante => restaurante != null)
+            .ToList();
+
+        foreach (Restaurante restaurante in restaurantes)
         {
-            List<Restaurante> restaurantes = connection.Query<Restaurante>(query)
-                .Where(restaurante => restaurante != null)
-                .ToList();
+            List<string> restricciones = connection.Query<string>(
+                @"SELECT re.nombre
+                  FROM CertificadosRestaurantes cr
+                  INNER JOIN Restricciones re ON re.id = cr.idRestriccion
+                  WHERE cr.idRestaurante = @idRestaurante
+                  ORDER BY re.nombre",
+                new { idRestaurante = restaurante.id }).ToList();
 
-            int fallbackIndex = 0;
-            foreach (Restaurante restaurante in restaurantes)
-            {
-                if (restaurante == null)
-                    continue;
-
-                List<string> restricciones = connection.Query<string>(
-                    @"SELECT re.nombre
-                      FROM CertificadosRestaurantes cr
-                      INNER JOIN Restricciones re ON re.id = cr.idRestriccion
-                      WHERE cr.idRestaurante = @idRestaurante
-                      ORDER BY re.nombre",
-                    new { idRestaurante = restaurante.id }).ToList();
-
-                restaurante.restricciones = restricciones ?? new List<string>();
-                if (restaurante.restricciones.Count == 0 &&
-                    !string.IsNullOrWhiteSpace(restaurante.nombre) &&
-                    RestriccionesRestaurantes.TryGetValue(restaurante.nombre, out List<string> restriccionesIniciales))
-                {
-                    restaurante.restricciones = restriccionesIniciales;
-                }
-
-                string nombreNormalizado = NormalizarNombre(restaurante.nombre);
-                bool ubicacionEncontrada = false;
-                double latitud = 0d;
-                double longitud = 0d;
-
-                foreach (KeyValuePair<string, (double lat, double lng)> coordenada in CoordenadasRestaurantes)
-                {
-                    if (NormalizarNombre(coordenada.Key) != nombreNormalizado)
-                        continue;
-
-                    ubicacionEncontrada = true;
-                    latitud = coordenada.Value.lat;
-                    longitud = coordenada.Value.lng;
-                    break;
-                }
-
-                if (ubicacionEncontrada)
-                {
-                    restaurante.lat = latitud;
-                    restaurante.lng = longitud;
-                }
-                else
-                {
-                    (double lat, double lng) posicion = CoordenadasFallback[fallbackIndex % CoordenadasFallback.Length];
-                    restaurante.lat = posicion.lat;
-                    restaurante.lng = posicion.lng;
-                    fallbackIndex++;
-                }
-            }
-
-            return restaurantes;
+            restaurante.restricciones = restricciones ?? new List<string>();
         }
+
+        return restaurantes;
     }
 
     private void InsertarRestricciones(SqlConnection connection, int idUsuario, IEnumerable<Restriccion> restricciones)
@@ -165,8 +112,9 @@ public class DB
             return;
 
         foreach (Restriccion restriccion in restricciones
-            .Where(r => !string.IsNullOrWhiteSpace(r?.nombre))
-            .Select(r => new Restriccion { nombre = r.nombre.Trim() })
+            .Where(restriccion => restriccion != null)
+            .Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre))
+            .Select(restriccion => new Restriccion { nombre = restriccion.nombre.Trim() })
             .GroupBy(r => r.nombre, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First()))
         {
@@ -339,14 +287,21 @@ public class DB
             return connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
         }
 
-    public Usuario? ObtenerPerfilPublico(string identificador)
+    public Usuario ObtenerPerfilPublico(string identificador)
         {
             const string query = @"SELECT TOP 1 id, username, nombre, apellido, tipo, foto
                                    FROM Usuarios
                                    WHERE username = @identificador OR email = @identificador";
 
             using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
+            Usuario perfil = connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
+
+            if (perfil == null)
+            {
+                return null;
+            }
+
+            return perfil;
         }
 
     public bool SonAmigos(int idUsuarioA, int idUsuarioB)
@@ -589,7 +544,7 @@ public class DB
             return mensajes;
         }
 
-        public Usuario? ObtenerUsuarioConversacion(int idConversacion, int idUsuarioActual)
+        public Usuario ObtenerUsuarioConversacion(int idConversacion, int idUsuarioActual)
         {
             AsegurarTablasChat();
             const string query = @"
@@ -603,7 +558,14 @@ public class DB
                   AND (c.idUsuarioA = @idUsuarioActual OR c.idUsuarioB = @idUsuarioActual);";
 
             using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.QueryFirstOrDefault<Usuario>(query, new { idConversacion, idUsuarioActual });
+            Usuario usuario = connection.QueryFirstOrDefault<Usuario>(query, new { idConversacion, idUsuarioActual });
+
+            if (usuario == null)
+            {
+                return null;
+            }
+
+            return usuario;
         }
 
         public List<ConversacionChat> ObtenerConversacionesChat(int idUsuario)
