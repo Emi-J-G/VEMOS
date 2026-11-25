@@ -5,45 +5,42 @@ using Dapper;
 
 public class DB
 {
-    string _connectionString = @"Server=localhost;Database=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
+    string _connectionString = "Server=localhost;Database=VEMOSDB;Integrated Security=True;TrustServerCertificate=True;";
 
-    private void CargarRestriccionesUsuario(SqlConnection connection, Usuario usuario)
+    private void CargarRestriccionesUsuario(Usuario usuario)
     {
         if (usuario == null)
             return;
-
-        const string query = @"SELECT r.id, r.nombre, r.descripcion
-                               FROM RestriccionesUsuarios ru
-                               INNER JOIN Restricciones r ON ru.idRestriccion = r.id
-                               WHERE ru.idUsuario = @idUsuario";
-
-        List<Restriccion> restricciones = connection.Query<Restriccion>(query, new { idUsuario = usuario.id }).ToList();
-        usuario.restricciones = restricciones;
+        const string query = "exec CargarRestriccionesUsuario @idUsuario";
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            List<Restriccion> restricciones = connection.Query<Restriccion>(query, new { idUsuario = usuario.id }).ToList();
+            usuario.restricciones = restricciones;
+        }
     }
 
     public List<Restriccion> GetRestricciones() {
-        const string query = @"SELECT id, nombre, descripcion FROM Restricciones";
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        return connection.Query<Restriccion>(query).ToList();
+        const string query = "exec getRestricciones";
+        List<Restriccion> restricciones = new List<Restriccion>();
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            restricciones = connection.Query<Restriccion>(query).ToList();
+        }
+        return restricciones;
     }
 
     public void EliminarAmigo(int idUsuario, int idAmigo)
     {
-        const string query = @"DELETE FROM Amigos
-                                WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
-                                OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)";
-
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Execute(query, new { idUsuario, idAmigo });
+        const string query = "exec eliminarAmigo @idUsuario, @idAmigo";
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            connection.Execute(query, new { idUsuario, idAmigo });
+        }
     }
     
     public List<Restriccion> GetRestriccionesByUsuario(string usuario)
     {
-        string query = @"SELECT r.id, r.nombre, r.descripcion
-                         FROM Restricciones r
-                         INNER JOIN RestriccionesUsuarios ru ON r.id = ru.idRestriccion
-                         INNER JOIN Usuarios u ON ru.idUsuario = u.id
-                         WHERE u.username = @username";
+        string query = "exec GetRestriccionesByUsuario @username";
         List<Restriccion> restricciones = new List<Restriccion>();
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
@@ -52,10 +49,7 @@ public class DB
         return restricciones;
     }
     public List<Usuario> GetUsuariosByRestriccion(List<Restriccion> Restricciones) {
-        string query = @"SELECT DISTINCT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
-                        FROM Usuarios u INNER JOIN
-                        RestriccionesUsuarios ru ON u.id = ru.idUsuario 
-                        WHERE ru.idRestriccion = @idRestriccion";
+        string query = "exec GetUsuariosByRestriccion @idRestriccion";
         List<Usuario> users = new List<Usuario>();
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
@@ -72,45 +66,32 @@ public class DB
     }
     public List<Restaurante> GetRestaurantes()
     {
-        const string query = @"SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo,
-                                      r.idUsuario, r.lat, r.lng, foto.foto
-                               FROM Restaurantes r
-                               OUTER APPLY (
-                                   SELECT TOP 1 fr.foto
-                                   FROM FotosRestaurantes fr
-                                   WHERE fr.idRestaurante = r.id
-                                   ORDER BY fr.id
-                               ) foto
-                               ORDER BY r.nombre";
-
-        using SqlConnection connection = new SqlConnection(_connectionString);
-        connection.Open();
-
-        List<Restaurante> restaurantes = connection.Query<Restaurante>(query)
-            .Where(restaurante => restaurante != null)
-            .ToList();
-
+        const string query = @"exec GetRestaurantes";
+        List<Restaurante> restaurantes = new List<Restaurante>();
+        List<string> restricciones = new List<string>();
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        {
+            restaurantes = connection.Query<Restaurante>(query)
+                .Where(restaurante => restaurante != null)
+                .ToList();
+        }
         foreach (Restaurante restaurante in restaurantes)
         {
-            List<string> restricciones = connection.Query<string>(
-                @"SELECT re.nombre
-                  FROM CertificadosRestaurantes cr
-                  INNER JOIN Restricciones re ON re.id = cr.idRestriccion
-                  WHERE cr.idRestaurante = @idRestaurante
-                  ORDER BY re.nombre",
-                new { idRestaurante = restaurante.id }).ToList();
-
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                restricciones = connection.Query<string>(
+                    @"exec GetRestriccionesRestaurante @idRestaurante",
+                    new { idRestaurante = restaurante.id }).ToList();
+            }
             restaurante.restricciones = restricciones ?? new List<string>();
         }
-
         return restaurantes;
     }
 
-    private void InsertarRestricciones(SqlConnection connection, int idUsuario, IEnumerable<Restriccion> restricciones)
+    private void InsertarRestricciones(int idUsuario, IEnumerable<Restriccion> restricciones)
     {
         if (restricciones == null)
             return;
-
         foreach (Restriccion restriccion in restricciones
             .Where(restriccion => restriccion != null)
             .Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre))
@@ -118,21 +99,12 @@ public class DB
             .GroupBy(r => r.nombre, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First()))
         {
-            connection.Execute(
-                @"IF NOT EXISTS (SELECT 1 FROM Restricciones WHERE nombre = @nombre)
-                  INSERT INTO Restricciones (nombre, descripcion) VALUES (@nombre, @nombre);",
-                new { nombre = restriccion.nombre });
-
-            connection.Execute(
-                @"INSERT INTO RestriccionesUsuarios (idRestriccion, idUsuario)
-                  SELECT r.id, @idUsuario
-                  FROM Restricciones r
-                  WHERE r.nombre = @nombre
-                    AND NOT EXISTS (
-                        SELECT 1 FROM RestriccionesUsuarios ru
-                        WHERE ru.idRestriccion = r.id AND ru.idUsuario = @idUsuario
-                    );",
+            using (SqlConnection innerConnection = new SqlConnection(_connectionString))
+            {
+                connection.Execute(
+                @"exec InsertarRestriccionesUsuario @idUsuario, @nombre",
                 new { idUsuario, nombre = restriccion.nombre });
+            }
         }
     }
 
@@ -148,7 +120,7 @@ public class DB
             usuario.id = usuarioRegistrado.id;
 
             if (usuario.restricciones != null && usuario.restricciones.Any())
-                InsertarRestricciones(connection, usuario.id, usuario.restricciones);
+                InsertarRestricciones(usuario.id, usuario.restricciones);
         }
     }
 
@@ -179,10 +151,10 @@ public class DB
             usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pusername = username });
             if (usuario != null)
             {
-                CargarRestriccionesUsuario(connection, usuario);
+                CargarRestriccionesUsuario(usuario);
             }
-            return usuario;
         }
+        return usuario;
     }
     public Usuario emUsuarioExiste(string email) {
         string query = "exec getUsuarioByEmail @pemail";
@@ -192,10 +164,10 @@ public class DB
             usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email});
             if (usuario != null)
             {
-                CargarRestriccionesUsuario(connection, usuario);
+                CargarRestriccionesUsuario(usuario);
             }
-            return usuario;
         }
+        return usuario;
     }
 
     public Usuario ObtenerUsuarioPorEmail(string email)
@@ -216,9 +188,9 @@ public class DB
             if (usuario == null)
                 return null;
 
-            CargarRestriccionesUsuario(connection, usuario);
-            return usuario;
+            CargarRestriccionesUsuario(usuario);
         }
+        return usuario;
     }
 
     public void ActualizarUsuario(Usuario usuario)
@@ -254,22 +226,7 @@ public class DB
             return connection.Query<Usuario>(query, new { idUsuario }).ToList();
         }
 
-    public List<Usuario> BuscarUsuarios(string texto, int idUsuario)
-        {
-            const string query = @"SELECT TOP 30 id, username, nombre, apellido, tipo, foto
-                                   FROM Usuarios
-                                   WHERE id <> @idUsuario
-                                     AND (username LIKE '%' + @texto + '%'
-                                          OR nombre LIKE '%' + @texto + '%'
-                                          OR apellido LIKE '%' + @texto + '%'
-                                          OR email LIKE '%' + @texto + '%')
-                                   ORDER BY nombre, apellido, username";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
-        }
-
-    public List<Usuario> BuscarUsuariosPorTextoORestriccion(string texto, int idUsuario)
+        public List<Usuario> BuscarUsuariosPorTextoORestriccion(string texto, int idUsuario)
         {
             const string query = @"SELECT DISTINCT TOP 30 u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
                                    FROM Usuarios u
@@ -363,10 +320,6 @@ public class DB
 
             foreach (string nombre in restricciones)
             {
-                connection.Execute(
-                    @"IF NOT EXISTS (SELECT 1 FROM Restricciones WHERE nombre = @nombre)
-                      INSERT INTO Restricciones (nombre, descripcion) VALUES (@nombre, @nombre);",
-                    new { nombre });
                 connection.Execute(
                     @"INSERT INTO RestriccionesUsuarios (idRestriccion, idUsuario)
                       SELECT id, @idUsuario FROM Restricciones WHERE nombre = @nombre;",
