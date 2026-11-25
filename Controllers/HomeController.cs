@@ -200,6 +200,9 @@ public class HomeController : Controller
     [HttpGet("/Buscar")]
     public IActionResult Buscar(string q, string filtro)
     {
+        if (string.IsNullOrEmpty(HttpContext.Session.GetString("Usuario")))
+            return RedirectToAction("Index", new { abrirRegistro = true });
+
         string query = q;
         if (query == null)
                 query = string.Empty;

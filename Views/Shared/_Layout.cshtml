@@ -19,7 +19,7 @@
 
             <form class="search-form" action="/Buscar" method="get" role="search" data-search-page="/Buscar" aria-label="Abrir búsqueda">
                 <span class="search-icon"><img src="~/Logos/busqueda.png" alt="Buscar" /></span>
-                <input id="site-search" name="q" type="search" class="search-input" placeholder="Buscar restaurantes o platos" aria-label="Buscar restaurantes o platos" readonly onfocus="window.location.assign('/Buscar');" />
+                <input id="site-search" name="q" type="search" class="search-input" placeholder="Buscar restaurantes o platos" aria-label="Buscar restaurantes o platos" />
                 <button type="submit" class="search-button" aria-label="Buscar"></button>
             </form>
             @if (ViewBag.UsuarioAutenticado == true)

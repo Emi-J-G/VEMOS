@@ -1,4 +1,3 @@
-
 /* V.E.M.O.S. - Búsqueda pública y registro desde el footer.
    Se carga después de site.js y reutiliza sus popups de login y registro.
    No reemplaza las consultas al mapa ni la lógica de C# / SQL Server.
@@ -70,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
             event.preventDefault();
 
             if (!abrirRegistro()) {
-                window.location.assign(footerForm?.dataset.registerUrl || '/');
+                window.location.assign('/?abrirRegistro=true');
             }
         });
     }
