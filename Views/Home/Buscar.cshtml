@@ -1,8 +1,6 @@
 @model IEnumerable<VEMOS.Models.Restaurante>
 @{
     ViewData["Title"] = "Buscar";
-    string query = ViewBag.Query as string ?? string.Empty;
-    string filtro = ViewBag.Filtro as string ?? string.Empty;
 }
 
 @section Styles {
@@ -21,47 +19,34 @@
 
     <form class="search-page-form" action="/Buscar" method="get" role="search">
         <img src="~/Logos/busqueda.png" alt="" aria-hidden="true" />
-        <input type="search" name="q" value="@query" placeholder="Buscar por nombre, barrio o plato..." aria-label="Buscar por nombre, barrio o plato" autofocus />
+        <input type="search" name="q" value="@ViewBag.Query" placeholder="Buscar por nombre, barrio o plato..." aria-label="Buscar por nombre, barrio o plato" autofocus />
         <button type="submit">Buscar</button>
     </form>
 
     <div class="search-page-toolbar">
-        <strong>@(string.IsNullOrWhiteSpace(query) ? "Lugares para descubrir" : $"Resultados para “{query}”")</strong>
+        <strong>@ViewBag.TituloResultados</strong>
         <div class="search-page-filters"><button type="button" class="is-active">Todos</button><button type="button">Sin TACC</button><button type="button">Vegetariano</button><button type="button">Favoritos</button></div>
     </div>
 
     <div class="search-results-grid">
-        @foreach (VEMOS.Models.Restaurante restaurante in Model ?? Enumerable.Empty<VEMOS.Models.Restaurante>())
+        @foreach (VEMOS.Models.RestauranteVistaViewModel restaurante in ViewBag.Resultados)
         {
-            string foto = restaurante.foto?.Trim();
-            string fotoUrl = string.IsNullOrWhiteSpace(foto)
-                ? string.Empty
-                : (foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                    ? foto
-                    : Url.Content($"~/Images/{foto}"));
             <article class="search-result-card">
                 <div class="search-result-image">
-                    @if (string.IsNullOrWhiteSpace(fotoUrl))
-                    {
-                        <span class="restaurant-no-image">No hay imagen disponible</span>
-                    }
-                    else
-                    {
-                        <img src="@fotoUrl" alt="Interior de @restaurante.nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
-                        <span class="restaurant-no-image" hidden>No hay imagen disponible</span>
-                    }
+                    <img src="@restaurante.FotoUrl" alt="Interior de @restaurante.Nombre" onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+                    <span class="restaurant-no-image" hidden>No hay imagen disponible</span>
                 </div>
                 <div class="search-result-body">
-                    <p class="search-result-type">@restaurante.tipo · @restaurante.direccion</p>
-                    <h2>@restaurante.nombre</h2>
-                    <p>@restaurante.descripcion</p>
+                    <p class="search-result-type">@restaurante.Tipo · @restaurante.Direccion</p>
+                    <h2>@restaurante.Nombre</h2>
+                    <p>@restaurante.Descripcion</p>
                     <div>
-                        @foreach (string restriccion in restaurante.restricciones ?? Enumerable.Empty<string>())
+                        @foreach (string restriccion in restaurante.Restricciones)
                         {
                             <span>@restriccion</span>
                         }
                     </div>
-                    <a href="/Home/DetalleRestaurante?nombre=@Uri.EscapeDataString(restaurante.nombre)">Ver ficha →</a>
+                    <a href="/Home/DetalleRestaurante?nombre=@Uri.EscapeDataString(restaurante.Nombre)">Ver ficha →</a>
                 </div>
             </article>
         }

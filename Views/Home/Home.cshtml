@@ -1,34 +1,6 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Inicio";
-
-    IEnumerable<Restriccion> filtrosActivos = ViewBag.filtrosActivos as IEnumerable<Restriccion> ?? new List<Restriccion>();
-    IEnumerable<Plato> platosFavoritos = ViewBag.PlatosFavoritos as IEnumerable<Plato> ?? Enumerable.Empty<Plato>();
-    IEnumerable<Restaurante> restaurantesFavoritos = ViewBag.RestaurantesFavoritos as IEnumerable<Restaurante> ?? Enumerable.Empty<Restaurante>();
-    bool hayFavoritos = ViewBag.HayFavoritos as bool? ?? false;
-
-    string[] todasRestricciones = new[]
-    {
-        "Celiaquía",
-        "Diabetes",
-        "Kosher",
-        "Halal",
-        "Lactosa",
-        "Vegano",
-        "Vegetariano",
-        "Alergias"
-    };
-
-    HashSet<string> filtrosActivosNombres = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    foreach (Restriccion filtro in filtrosActivos)
-    {
-        if (!string.IsNullOrWhiteSpace(filtro.nombre))
-        {
-            filtrosActivosNombres.Add(filtro.nombre.Trim());
-        }
-    }
-
-    string tituloFavoritos = platosFavoritos.Any() ? "Tus platos favoritos" : (restaurantesFavoritos.Any() ? "Tus restaurantes favoritos" : "Sin favoritos");
 }
 
 @section Styles {
@@ -52,11 +24,11 @@
         <div class="active-filters">
             <strong>Tus filtros activos</strong>
             <div class="filter-chips">
-                @foreach (Restriccion restriccion in filtrosActivos)
+                @foreach (Restriccion restriccion in ViewBag.filtrosActivos)
                 {
                     <span class="filter-chip"><span aria-hidden="true">✓</span> @restriccion.nombre</span>
                 }
-                @if (filtrosActivos.Count() == 0)
+                @if (ViewBag.filtrosActivos.Count == 0)
                 {
                     <span class="filter-chip"><span aria-hidden="true">✓</span> Sin filtros activos</span>
                 }
@@ -71,15 +43,14 @@
                 </div>
 
                 <div class="filter-editor-grid">
-                    @foreach (string filtro in todasRestricciones)
+                    @foreach (FiltroEditorViewModel filtro in ViewBag.FiltrosEditor)
                     {
-                        bool seleccionado = filtrosActivosNombres.Contains(filtro);
                         <button type="button"
-                                class="filter-editor-option @(seleccionado ? "is-selected" : "")"
-                                data-filter-name="@filtro"
-                                aria-pressed="@(seleccionado ? "true" : "false")">
-                            <span class="filter-editor-check" aria-hidden="true">@(seleccionado ? "✓" : "+")</span>
-                            <span>@filtro</span>
+                                class="filter-editor-option @filtro.ClaseSeleccionado"
+                                data-filter-name="@filtro.Nombre"
+                                aria-pressed="@filtro.AriaPressed">
+                            <span class="filter-editor-check" aria-hidden="true">@filtro.TextoCheck</span>
+                            <span>@filtro.Nombre</span>
                         </button>
                     }
                 </div>
@@ -111,74 +82,36 @@
 <section class="inspiration-section" aria-labelledby="favorites-section-title">
     <div class="section-heading inspiration-heading">
         <div>
-            <h2 id="favorites-section-title">@tituloFavoritos</h2>
+            <h2 id="favorites-section-title">@ViewBag.TituloFavoritos</h2>
             <p>Acá aparecen tus favoritos guardados en la base de datos.</p>
         </div>
         <a class="section-link" href="/Mapa">Ir al mapa <span aria-hidden="true">→</span></a>
     </div>
 
-    @if (hayFavoritos)
+    @if (ViewBag.HayFavoritos == true)
     {
         <div class="inspiration-cards">
-            @if (platosFavoritos.Any())
+            @foreach (Plato plato in ViewBag.PlatosFavoritos)
             {
-                foreach (Plato plato in platosFavoritos)
-                {
-                    string platoFoto = plato.foto?.Trim();
-                    string platoFotoUrl = string.IsNullOrWhiteSpace(platoFoto)
-                        ? string.Empty
-                        : (platoFoto.StartsWith("/", StringComparison.Ordinal) || platoFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                            ? platoFoto
-                            : Url.Content($"~/Images/{platoFoto}"));
-
-                    <article class="inspiration-card">
-                        <div class="inspiration-image @(string.IsNullOrWhiteSpace(platoFotoUrl) ? "inspiration-no-image" : "")">
-                            @if (!string.IsNullOrWhiteSpace(platoFotoUrl))
-                            {
-                                <img src="@platoFotoUrl" alt="@plato.nombre" onerror="this.hidden=true; this.parentElement.classList.add('inspiration-no-image'); this.parentElement.querySelector('.inspiration-no-image-text').hidden = false; this.nextElementSibling.hidden = true;" />
-                                <span class="inspiration-no-image-text" hidden>No hay imagen disponible</span>
-                                <span class="inspiration-image-badge">@plato.tipo</span>
-                            }
-                            else
-                            {
-                                <span class="inspiration-no-image-text">No hay imagen disponible</span>
-                                <span class="inspiration-image-badge">@plato.tipo</span>
-                            }
-                        </div>
-                        <h3>@plato.nombre</h3>
-                        <p>@plato.descripcion</p>
-                    </article>
-                }
+                <article class="inspiration-card">
+                    <div class="inspiration-image">
+                        <img src="@plato.FotoUrl" alt="@plato.nombre" />
+                        <span class="inspiration-image-badge">@plato.tipo</span>
+                    </div>
+                    <h3>@plato.nombre</h3>
+                    <p>@plato.descripcion</p>
+                </article>
             }
-            else
+            @foreach (Restaurante restaurante in ViewBag.RestaurantesFavoritos)
             {
-                foreach (Restaurante restaurante in restaurantesFavoritos)
-                {
-                    string restauranteFoto = restaurante.foto?.Trim();
-                    string restauranteFotoUrl = string.IsNullOrWhiteSpace(restauranteFoto)
-                        ? string.Empty
-                        : (restauranteFoto.StartsWith("/", StringComparison.Ordinal) || restauranteFoto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                            ? restauranteFoto
-                            : Url.Content($"~/Images/{restauranteFoto}"));
-
-                    <article class="inspiration-card">
-                        <div class="inspiration-image @(string.IsNullOrWhiteSpace(restauranteFotoUrl) ? "inspiration-no-image" : "")">
-                            @if (!string.IsNullOrWhiteSpace(restauranteFotoUrl))
-                            {
-                                <img src="@restauranteFotoUrl" alt="@restaurante.nombre" onerror="this.hidden=true; this.parentElement.classList.add('inspiration-no-image'); this.parentElement.querySelector('.inspiration-no-image-text').hidden = false; this.nextElementSibling.hidden = true;" />
-                                <span class="inspiration-no-image-text" hidden>No hay imagen disponible</span>
-                                <span class="inspiration-image-badge">@restaurante.tipo</span>
-                            }
-                            else
-                            {
-                                <span class="inspiration-no-image-text">No hay imagen disponible</span>
-                                <span class="inspiration-image-badge">@restaurante.tipo</span>
-                            }
-                        </div>
-                        <h3>@restaurante.nombre</h3>
-                        <p>@restaurante.direccion</p>
-                    </article>
-                }
+                <article class="inspiration-card">
+                    <div class="inspiration-image">
+                        <img src="@restaurante.FotoUrl" alt="@restaurante.nombre" />
+                        <span class="inspiration-image-badge">@restaurante.tipo</span>
+                    </div>
+                    <h3>@restaurante.nombre</h3>
+                    <p>@restaurante.direccion</p>
+                </article>
             }
         </div>
     }

@@ -10,17 +10,6 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    @{
-        string usuario = Context.Session.GetString("Usuario");
-        string nombreCompleto = Context.Session.GetString("NombreCompleto");
-        string inicialUsuario = !string.IsNullOrWhiteSpace(nombreCompleto)
-            ? nombreCompleto.Trim()[0].ToString().ToUpperInvariant()
-            : (!string.IsNullOrWhiteSpace(usuario)
-                ? usuario.Trim()[0].ToString().ToUpperInvariant()
-                : "U");
-    }
-
-
     <header class="topbar">
         <div class="brand-wrap">
             <a href="/" class="brand-link" aria-label="Ir a inicio">
@@ -33,7 +22,7 @@
                 <input id="site-search" name="q" type="search" class="search-input" placeholder="Buscar restaurantes o platos" aria-label="Buscar restaurantes o platos" readonly onfocus="window.location.assign('/Buscar');" />
                 <button type="submit" class="search-button" aria-label="Buscar"></button>
             </form>
-            @if (!string.IsNullOrWhiteSpace(usuario))
+            @if (ViewBag.UsuarioAutenticado == true)
             {
                 <nav class="user-header-actions" aria-label="Navegación de usuario">
                     <a href="/Home/Home" class="header-nav-link header-home-link">
@@ -54,7 +43,7 @@
                     </a>
                     <div class="profile-dropdown dropdown">
                         <button type="button" class="profile-button profile-dropdown-toggle dropdown-toggle" id="profileMenuButton" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Abrir menú de perfil">
-                            <span class="profile-avatar">@inicialUsuario</span>
+                            <span class="profile-avatar">@ViewBag.InicialUsuario</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu" aria-labelledby="profileMenuButton">
                             <li><a class="dropdown-item" href="/Options/Perfil">Mi perfil</a></li>

@@ -57,6 +57,29 @@ public class HomeController : Controller
         filtrosActivos = db.GetRestriccionesByUsuario(usuario);
         ViewBag.filtrosActivos = filtrosActivos;
 
+        string[] todasRestricciones =
+        {
+            "Celiaquía", "Diabetes", "Kosher", "Halal", "Lactosa", "Vegano", "Vegetariano", "Alergias"
+        };
+
+        HashSet<string> nombresActivos = filtrosActivos
+            .Where(filtro => !string.IsNullOrWhiteSpace(filtro.nombre))
+            .Select(filtro => filtro.nombre.Trim())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        ViewBag.FiltrosEditor = todasRestricciones.Select(nombre =>
+        {
+            bool seleccionado = nombresActivos.Contains(nombre);
+            return new FiltroEditorViewModel
+            {
+                Nombre = nombre,
+                Seleccionado = seleccionado,
+                ClaseSeleccionado = seleccionado ? "is-selected" : string.Empty,
+                AriaPressed = seleccionado ? "true" : "false",
+                TextoCheck = seleccionado ? "✓" : "+"
+            };
+        }).ToList();
+
         Usuario usuarioSesion = ObtenerUsuarioSesion();
         int usuarioId;
         if (usuarioSesion != null)
@@ -76,12 +99,18 @@ public class HomeController : Controller
             ViewBag.PlatosFavoritos = platosFavoritos;
             ViewBag.RestaurantesFavoritos = restaurantesFavoritos;
             ViewBag.HayFavoritos = platosFavoritos.Any() || restaurantesFavoritos.Any();
+            ViewBag.TituloFavoritos = platosFavoritos.Any()
+                ? "Tus platos favoritos"
+                : restaurantesFavoritos.Any()
+                    ? "Tus restaurantes favoritos"
+                    : "Sin favoritos";
         }
         else
         {
             ViewBag.PlatosFavoritos = new List<Plato>();
             ViewBag.RestaurantesFavoritos = new List<Restaurante>();
             ViewBag.HayFavoritos = false;
+            ViewBag.TituloFavoritos = "Sin favoritos";
         }
 
         return View();
@@ -221,7 +250,33 @@ public class HomeController : Controller
                 .ToList();
         }
 
-        return View(restaurantes);
+        List<RestauranteVistaViewModel> resultados = restaurantes.Select(restaurante =>
+        {
+            string foto = restaurante.foto?.Trim() ?? string.Empty;
+            string fotoUrl = string.IsNullOrWhiteSpace(foto)
+                ? "/Images/Arturito.jpg"
+                : foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? foto
+                    : $"/Images/{foto}";
+
+            return new RestauranteVistaViewModel
+            {
+                Id = restaurante.id,
+                Nombre = restaurante.nombre ?? string.Empty,
+                Direccion = restaurante.direccion ?? string.Empty,
+                Descripcion = restaurante.descripcion ?? string.Empty,
+                Tipo = restaurante.tipo ?? string.Empty,
+                FotoUrl = fotoUrl,
+                Restricciones = restaurante.restricciones ?? new List<string>()
+            };
+        }).ToList();
+
+        ViewBag.Resultados = resultados;
+        ViewBag.TituloResultados = string.IsNullOrWhiteSpace(query)
+            ? "Lugares para descubrir"
+            : $"Resultados para “{query}”";
+
+        return View();
     }
 
     public IActionResult Privacy()

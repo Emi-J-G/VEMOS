@@ -2,13 +2,6 @@
 
 @{
     ViewData["Title"] = "Perfil";
-    VEMOS.Models.Usuario usuario = Model;
-    string nombre = string.Join(" ", new[] { usuario?.nombre, usuario?.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
-    string inicial = !string.IsNullOrWhiteSpace(nombre) ? nombre.Trim()[0].ToString().ToUpperInvariant() : "U";
-    List<VEMOS.Models.Restriccion> restricciones = usuario?.restricciones?.Where(restriccion => !string.IsNullOrWhiteSpace(restriccion.nombre)).ToList() ?? new List<VEMOS.Models.Restriccion>();
-    IEnumerable<VEMOS.Models.Usuario> amigos = ViewBag.Amigos as IEnumerable<VEMOS.Models.Usuario> ?? Enumerable.Empty<VEMOS.Models.Usuario>();
-    IEnumerable<VEMOS.Models.Restaurante> favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
-    string mensaje = ViewBag.Mensaje as string;
 }
 
 @section Styles {
@@ -17,28 +10,28 @@
 
 <section class="profile-page" aria-labelledby="profile-title">
     <div class="profile-summary">
-        <div class="profile-avatar-large" aria-hidden="true">@inicial</div>
+        <div class="profile-avatar-large" aria-hidden="true">@Model.Inicial</div>
         <div class="profile-summary-copy">
             <p class="profile-kicker">Mi perfil</p>
-            <h1 id="profile-title">@(string.IsNullOrWhiteSpace(nombre) ? "Tu perfil" : nombre)</h1>
-            <p class="profile-handle">@@@(usuario?.username ?? "usuario") <span>• Cuenta @(usuario?.tipo ?? "Cliente")</span></p>
+            <h1 id="profile-title">@Model.NombreCompleto</h1>
+            <p class="profile-handle">@@@Model.username <span>• Cuenta @Model.tipo</span></p>
             <p class="profile-location">Argentina <span aria-hidden="true">•</span> Preferencias alimentarias personalizadas</p>
         </div>
         <a class="profile-edit-link" href="#editar-perfil">Editar perfil</a>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(mensaje))
+    @if (!string.IsNullOrWhiteSpace(ViewBag.Mensaje as string))
     {
-        <div class="profile-feedback" role="status">@mensaje</div>
+        <div class="profile-feedback" role="status">@ViewBag.Mensaje</div>
     }
 
     <details class="profile-edit-card" id="editar-perfil">
         <summary><span><span class="profile-kicker">Tu información</span><strong id="edit-profile-title">Editá tu perfil</strong></span><span class="profile-edit-summary">Abrir editor ↓</span></summary>
         <form class="profile-edit-form" method="post" action="/Options/Perfil/Editar">
-            <label>Usuario<input name="username" value="@usuario?.username" required /></label>
-            <label>Nombre<input name="nombre" value="@usuario?.nombre" required /></label>
-            <label>Apellido<input name="apellido" value="@usuario?.apellido" required /></label>
-            <label>Correo electrónico<input type="email" name="email" value="@usuario?.email" required /></label>
+            <label>Usuario<input name="username" value="@Model.username" required /></label>
+            <label>Nombre<input name="nombre" value="@Model.nombre" required /></label>
+            <label>Apellido<input name="apellido" value="@Model.apellido" required /></label>
+            <label>Correo electrónico<input type="email" name="email" value="@Model.email" required /></label>
             <button type="submit" class="settings-primary-button">Guardar cambios</button>
         </form>
     </details>
@@ -49,12 +42,12 @@
                 <p class="profile-kicker">Tus preferencias activas</p>
                 <h2>Lo que te importa al elegir</h2>
             </div>
-            <span class="profile-preferences-count">@restricciones.Count activas</span>
+            <span class="profile-preferences-count">@Model.restricciones.Count activas</span>
         </div>
         <div class="profile-chip-list">
-            @if (restricciones.Count > 0)
+            @if (Model.restricciones.Count > 0)
             {
-                foreach (VEMOS.Models.Restriccion restriccion in restricciones)
+                foreach (VEMOS.Models.Restriccion restriccion in Model.restricciones)
                 {
                     <span class="profile-chip"><span aria-hidden="true">✓</span> @restriccion.nombre</span>
                 }
@@ -75,15 +68,14 @@
                 </div>
                 <button type="button" class="profile-text-button">Crear</button>
             </div>
-            @if (amigos.Any())
+            @if (ViewBag.Amigos.Count > 0)
             {
-                foreach (VEMOS.Models.Usuario amigo in amigos)
+                foreach (VEMOS.Models.Usuario amigo in ViewBag.Amigos)
                 {
-                    string nombreAmigo = string.Join(" ", new[] { amigo.nombre, amigo.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
                     <article class="profile-group-row">
                         <div class="profile-group-icon"><img src="~/Logos/perfil.png" alt="" /></div>
                         <div>
-                            <h3>@(string.IsNullOrWhiteSpace(nombreAmigo) ? amigo.username : nombreAmigo)</h3>
+                            <h3>@amigo.NombreCompleto</h3>
                             <p>@@@amigo.username</p>
                             <a href="/Options/Usuarios/Perfil?username=@Uri.EscapeDataString(amigo.username)">Ver perfil <span aria-hidden="true">→</span></a>
                         </div>
@@ -106,12 +98,12 @@
                 <a class="profile-text-button" href="/Favoritos">Ver todos</a>
             </div>
             <div class="profile-favorite-list">
-                @if (favoritos.Any())
+                @if (ViewBag.RestaurantesFavoritos.Count > 0)
                 {
-                    foreach (VEMOS.Models.Restaurante favorito in favoritos)
+                    foreach (VEMOS.Models.Restaurante favorito in ViewBag.RestaurantesFavoritos)
                     {
                         <article class="profile-favorite-item">
-                            <img src="~/Images/Arturito.jpg" alt="Interior de @favorito.nombre" />
+                            <img src="@favorito.FotoUrl" alt="Interior de @favorito.nombre" />
                             <div>
                                 <h3>@favorito.nombre</h3>
                                 <p>@favorito.direccion • @favorito.tipo</p>

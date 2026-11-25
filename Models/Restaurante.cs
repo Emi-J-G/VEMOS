@@ -14,4 +14,15 @@ public class Restaurante
     public List<Plato> platos { get; set; }
     public string foto { get; set; }
     public int idUsuario { get; set; }
+
+    public string FotoUrl
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(foto)) return "/Images/Arturito.jpg";
+            return foto.StartsWith("/", StringComparison.Ordinal) || foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? foto
+                : $"/Images/{foto}";
+        }
+    }
 }

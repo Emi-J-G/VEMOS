@@ -2,16 +2,7 @@
 
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Perfil de @" + Model.username;
-    string nombre = string.Join(" ", new[] { Model.nombre, Model.apellido }.Where(value => !string.IsNullOrWhiteSpace(value)));
-    string inicial = !string.IsNullOrWhiteSpace(Model.username) ? Model.username.Trim()[0].ToString().ToUpperInvariant() : "U";
-    IEnumerable<VEMOS.Models.Restaurante> favoritos = ViewBag.RestaurantesFavoritos as IEnumerable<VEMOS.Models.Restaurante> ?? Enumerable.Empty<VEMOS.Models.Restaurante>();
-    bool esAmigo = ViewBag.EsAmigo is bool value && value;
-    string fotoUrl = !string.IsNullOrWhiteSpace(Model.foto)
-        ? (Model.foto.StartsWith("/", StringComparison.Ordinal) || Model.foto.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            ? Model.foto
-            : Url.Content($"~/Images/{Model.foto}"))
-        : string.Empty;
+    ViewData["Title"] = "Perfil público";
 }
 
 @section Styles {
@@ -21,20 +12,20 @@
 <section class="profile-page public-profile-page" aria-labelledby="public-profile-title">
     <a class="profile-edit-link" href="/Options/Amigos">← Volver a amigos</a>
     <div class="profile-summary">
-        @if (!string.IsNullOrWhiteSpace(fotoUrl))
+        @if (!string.IsNullOrWhiteSpace(Model.foto))
         {
-            <img class="profile-avatar-large profile-avatar-photo" src="@fotoUrl" alt="Foto de @Model.username" />
+            <img class="profile-avatar-large profile-avatar-photo" src="@Model.foto" alt="Foto de @Model.username" />
         }
         else
         {
-            <div class="profile-avatar-large" aria-hidden="true">@inicial</div>
+            <div class="profile-avatar-large" aria-hidden="true">@Model.username.Trim()[0].ToString().ToUpperInvariant()</div>
         }
         <div class="profile-summary-copy">
             <p class="profile-kicker">Perfil público</p>
-            <h1 id="public-profile-title">@(string.IsNullOrWhiteSpace(nombre) ? Model.username : nombre)</h1>
+            <h1 id="public-profile-title">@Model.NombreCompleto</h1>
             <p class="profile-handle">@@@Model.username <span>• Cuenta @Model.tipo</span></p>
         </div>
-        @if (esAmigo)
+        @if (ViewBag.EsAmigo is bool esAmigo && esAmigo)
         {
             <form class="profile-friend-hover-form" method="post" action="/Options/Amigos/Eliminar">
                 <input type="hidden" name="idAmigo" value="@Model.id" />
@@ -51,7 +42,7 @@
                 <button class="profile-edit-link" type="submit">Agregar como amigo</button>
             </form>
         }
-        <form method="post" action="/Chat/Iniciar">
+        <form method="post" action="/Chat/EnviarMensaje">
             <input type="hidden" name="username" value="@Model.username" />
             <button class="profile-edit-link" type="submit">Enviar mensaje</button>
         </form>
@@ -60,12 +51,12 @@
     <section class="profile-favorites-card public-profile-favorites" aria-labelledby="public-favorites-title">
         <div class="profile-section-heading">
             <div><p class="profile-kicker">Guardados</p><h2 id="public-favorites-title">Restaurantes favoritos</h2></div>
-            <span class="profile-preferences-count">@favoritos.Count()</span>
+            <span class="profile-preferences-count">@((IEnumerable<VEMOS.Models.Restaurante>)ViewBag.RestaurantesFavoritos).Count()</span>
         </div>
-        @if (favoritos.Any())
+        @if (((IEnumerable<VEMOS.Models.Restaurante>)ViewBag.RestaurantesFavoritos).Any())
         {
             <div class="profile-favorite-list">
-                @foreach (VEMOS.Models.Restaurante favorito in favoritos)
+                @foreach (VEMOS.Models.Restaurante favorito in (IEnumerable<VEMOS.Models.Restaurante>)ViewBag.RestaurantesFavoritos)
                 {
                     <article class="profile-favorite-item">
                         <div>
