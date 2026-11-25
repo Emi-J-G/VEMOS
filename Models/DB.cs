@@ -99,7 +99,7 @@ public class DB
             .GroupBy(r => r.nombre, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First()))
         {
-            using (SqlConnection innerConnection = new SqlConnection(_connectionString))
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 connection.Execute(
                 @"exec InsertarRestriccionesUsuario @idUsuario, @nombre",
