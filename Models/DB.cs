@@ -66,7 +66,7 @@ public class DB
     }
     public List<Restaurante> GetRestaurantes()
     {
-        const string query = @"exec GetRestaurantes";
+        const string query = "exec GetRestaurantes";
         List<Restaurante> restaurantes = new List<Restaurante>();
         List<string> restricciones = new List<string>();
         using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -80,7 +80,7 @@ public class DB
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 restricciones = connection.Query<string>(
-                    @"exec GetRestriccionesRestaurante @idRestaurante",
+                    "exec GetRestriccionesRestaurante @idRestaurante",
                     new { idRestaurante = restaurante.id }).ToList();
             }
             restaurante.restricciones = restricciones ?? new List<string>();
@@ -102,7 +102,7 @@ public class DB
             using (SqlConnection innerConnection = new SqlConnection(_connectionString))
             {
                 connection.Execute(
-                @"exec InsertarRestriccionesUsuario @idUsuario, @nombre",
+                "exec InsertarRestriccionesUsuario @idUsuario, @nombre",
                 new { idUsuario, nombre = restriccion.nombre });
             }
         }
@@ -127,7 +127,7 @@ public class DB
     //devuelve un usuario si existe en la base de datos, si no devuelve null.
     public Usuario validarUsuario(string email, string contraseña) {
         string query = "exec validateUserByEmNPass @pemail, @pass";
-        string rquery = @"exec getRestriccionesByidUser @idUser";
+        string rquery = "exec getRestriccionesByidUser @idUser";
         Usuario usuario = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
             connection.Open();//mantiene la bd abierta mientras se ejecuta el using, es mas eficiente bajo varios inserts.
@@ -138,8 +138,8 @@ public class DB
                 List<Restriccion> restricciones = connection.Query<Restriccion>(rquery, new { idUser = usuario.id }).ToList();
                 usuario.restricciones = restricciones;
             }
-            return usuario;
         }
+        return usuario;
     }
 
     //trae un usuario si su user existe
@@ -176,7 +176,7 @@ public class DB
             return null;
 
         string query = "exec getUsuarioByEmail @pemail";
-        string rquery = @"exec getRestriccionesByidUser @idUser";
+        string rquery = "exec getRestriccionesByidUser @idUser";
 
         Usuario usuario = null;
 
@@ -195,64 +195,51 @@ public class DB
 
     public void ActualizarUsuario(Usuario usuario)
         {
-            const string query = @"UPDATE Usuarios
-                                   SET username = @username,
-                                       nombre = @nombre,
-                                       apellido = @apellido,
-                                       email = @email
-                                   WHERE id = @id";
+            const string query = "exec updateUser @username, @nombre, @apellido, @email, @id";
 
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Execute(query, new
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                usuario.id,
-                usuario.username,
-                usuario.nombre,
-                usuario.apellido,
-                usuario.email
-            });
+                connection.Execute(query, new
+                {
+                    usuario.id,
+                    usuario.username,
+                    usuario.nombre,
+                    usuario.apellido,
+                    usuario.email
+                });
+            }
         }
 
     public List<Usuario> ObtenerAmigos(int idUsuario)
         {
-            const string query = @"SELECT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo
-                                   FROM Amigos a
-                                   INNER JOIN Usuarios u ON u.id =
-                                       CASE WHEN a.idUsuarioA = @idUsuario THEN a.idUsuarioB ELSE a.idUsuarioA END
-                                   WHERE a.idUsuarioA = @idUsuario OR a.idUsuarioB = @idUsuario
-                                   ORDER BY u.nombre, u.apellido";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<Usuario>(query, new { idUsuario }).ToList();
+            const string query = "exec getAmigos @idUsuario";
+            List <Usuario> amigos = new List<Usuario>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                amigos = connection.Query<Usuario>(query, new { idUsuario }).ToList();
+            }
+            return amigos;
         }
 
         public List<Usuario> BuscarUsuariosPorTextoORestriccion(string texto, int idUsuario)
         {
-            const string query = @"SELECT DISTINCT TOP 30 u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
-                                   FROM Usuarios u
-                                   LEFT JOIN RestriccionesUsuarios ru ON ru.idUsuario = u.id
-                                   LEFT JOIN Restricciones r ON r.id = ru.idRestriccion
-                                   WHERE u.id <> @idUsuario
-                                     AND (u.username LIKE '%' + @texto + '%'
-                                          OR u.nombre LIKE '%' + @texto + '%'
-                                          OR u.apellido LIKE '%' + @texto + '%'
-                                          OR u.email LIKE '%' + @texto + '%'
-                                          OR r.nombre LIKE '%' + @texto + '%')
-                                   ORDER BY u.nombre, u.apellido, u.username";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
+            const string query = "exec BuscarUsuariosPorTextoORestriccion @idUsuario, @texto";
+            List<Usuario> usuarios = new List<Usuario>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                usuarios = connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
+            }
+            return usuarios;
         }
 
     public Usuario ObtenerPerfilPublico(string identificador)
         {
-            const string query = @"SELECT TOP 1 id, username, nombre, apellido, tipo, foto
-                                   FROM Usuarios
-                                   WHERE username = @identificador OR email = @identificador";
+            const string query = "exec ObtenerPerfilPublico @identificador";
 
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            Usuario perfil = connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
-
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                Usuario perfil = connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
+            }
             if (perfil == null)
             {
                 return null;
@@ -263,45 +250,35 @@ public class DB
 
     public bool SonAmigos(int idUsuarioA, int idUsuarioB)
         {
-            const string query = @"SELECT CASE WHEN EXISTS (
-                                       SELECT 1 FROM Amigos
-                                       WHERE (idUsuarioA = @idUsuarioA AND idUsuarioB = @idUsuarioB)
-                                          OR (idUsuarioA = @idUsuarioB AND idUsuarioB = @idUsuarioA)
-                                   ) THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.ExecuteScalar<bool>(query, new { idUsuarioA, idUsuarioB });
+            const string query = "exec VerificarAmigos @idUsuarioA, @idUsuarioB";
+            bool sonAmigos = false;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                sonAmigos = connection.ExecuteScalar<bool>(query, new { idUsuarioA, idUsuarioB });
+            }
+            return sonAmigos;
         }
 
     public List<Restaurante> ObtenerRestaurantesFavoritos(int idUsuario)
         {
-            const string query = @"SELECT r.id, r.nombre, r.direccion, r.descripcion, r.telefono, r.tipo, r.idUsuario,
-                                          foto.foto
-                                   FROM RestaurantesFavoritos rf
-                                   INNER JOIN Restaurantes r ON r.id = rf.idRestaurante
-                                   OUTER APPLY (
-                                       SELECT TOP 1 fr.foto
-                                       FROM FotosRestaurantes fr
-                                       WHERE fr.idRestaurante = r.id
-                                       ORDER BY fr.id
-                                   ) foto
-                                   WHERE rf.idUsuario = @idUsuario
-                                   ORDER BY r.nombre";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<Restaurante>(query, new { idUsuario }).ToList();
+            const string query = "exec GetRestaurantesFavoritos @idUsuario";
+            List<Restaurante> restaurantes = new List<Restaurante>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                restaurantes = connection.Query<Restaurante>(query, new { idUsuario }).ToList();
+            }
+            return restaurantes;
         }
 
     public List<Plato> ObtenerPlatosFavoritos(int idUsuario)
         {
-            const string query = @"SELECT p.id, p.idRestaurante, p.nombre, p.descripcion, p.precio, p.tipo, p.foto
-                               FROM PlatosFavoritos pf
-                               INNER JOIN Platos p ON p.id = pf.idPlato
-                               WHERE pf.idUsuario = @idUsuario
-                               ORDER BY p.nombre";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<Plato>(query, new { idUsuario }).ToList();
+            const string query = "exec GetPlatosFavoritos @idUsuario";
+            List<Plato> platos = new List<Plato>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                platos = connection.Query<Plato>(query, new { idUsuario }).ToList();
+            }
+            return platos;
         }
 
     public void ActualizarRestriccionesUsuario(int idUsuario, IEnumerable<string> nombres)
@@ -312,177 +289,93 @@ public class DB
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Open();
-            connection.Execute(
-                "DELETE FROM RestriccionesUsuarios WHERE idUsuario = @idUsuario",
-                new { idUsuario });
-
-            foreach (string nombre in restricciones)
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 connection.Execute(
-                    @"INSERT INTO RestriccionesUsuarios (idRestriccion, idUsuario)
-                      SELECT id, @idUsuario FROM Restricciones WHERE nombre = @nombre;",
+                    "exec DeleteRestriccionUsuario @idUsuario",
+                    new { idUsuario });
+            }
+            foreach (string nombre in restricciones)
+            {
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                connection.Execute(
+                    "exec InsertRestriccionUsuario @idUsuario, @nombre",
                     new { idUsuario, nombre });
+                }
             }
         }
 
-    public HashSet<int> ObtenerIdsRestaurantesFavoritos(int idUsuario)
+    public List<int> ObtenerIdsRestaurantesFavoritos(int idUsuario)
         {
-            const string query = @"SELECT idRestaurante
-                                   FROM RestaurantesFavoritos
-                                   WHERE idUsuario = @idUsuario";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.Query<int>(query, new { idUsuario }).ToHashSet();
+            const string query = "exec GetIdsRestaurantesFavoritos @idUsuario";
+            List<int> ids = new List<int>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                ids = connection.Query<int>(query, new { idUsuario }).ToList();
+            }
+            return ids;
         }
 
     public bool AlternarRestauranteFavorito(int idUsuario, int idRestaurante)
         {
-            const string query = @"IF EXISTS (
-                                       SELECT 1 FROM RestaurantesFavoritos
-                                       WHERE idUsuario = @idUsuario AND idRestaurante = @idRestaurante
-                                   )
-                                   BEGIN
-                                       DELETE FROM RestaurantesFavoritos
-                                       WHERE idUsuario = @idUsuario AND idRestaurante = @idRestaurante;
-                                       SELECT CAST(0 AS bit);
-                                   END
-                                   ELSE
-                                   BEGIN
-                                       INSERT INTO RestaurantesFavoritos (idUsuario, idRestaurante)
-                                       VALUES (@idUsuario, @idRestaurante);
-                                       SELECT CAST(1 AS bit);
-                                   END";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.ExecuteScalar<bool>(query, new { idUsuario, idRestaurante });
+            const string query = "exec AlternarRestauranteFavorito @idUsuario, @idRestaurante";
+            bool resultado = false;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                resultado = connection.ExecuteScalar<bool>(query, new { idUsuario, idRestaurante });
+            }
+            return resultado;
         }
 
     public bool AgregarAmigo(int idUsuario, string identificador)
         {
-            const string query = @"DECLARE @idAmigo int;
-                                   SELECT TOP 1 @idAmigo = id
-                                   FROM Usuarios
-                                   WHERE username = @identificador OR email = @identificador;
-
-                                   IF @idAmigo IS NULL OR @idAmigo = @idUsuario
-                                       SELECT CAST(0 AS bit);
-                                   ELSE IF EXISTS (
-                                       SELECT 1 FROM Amigos
-                                       WHERE (idUsuarioA = @idUsuario AND idUsuarioB = @idAmigo)
-                                          OR (idUsuarioA = @idAmigo AND idUsuarioB = @idUsuario)
-                                   )
-                                       SELECT CAST(0 AS bit);
-                                   ELSE
-                                   BEGIN
-                                       INSERT INTO Amigos (idUsuarioA, idUsuarioB)
-                                       VALUES (@idUsuario, @idAmigo);
-                                       SELECT CAST(1 AS bit);
-                                   END";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.ExecuteScalar<bool>(query, new { idUsuario, identificador = identificador.Trim() });
-        }
-
-        public void AsegurarTablasChat()
-        {
-            const string query = @"
-                IF OBJECT_ID('dbo.ConversacionesChat', 'U') IS NULL
-                BEGIN
-                    CREATE TABLE dbo.ConversacionesChat (
-                        id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
-                        idUsuarioA int NOT NULL,
-                        idUsuarioB int NOT NULL,
-                        fechaActualizacion datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
-                        CONSTRAINT UQ_ConversacionesChat_Pares UNIQUE (idUsuarioA, idUsuarioB),
-                        CONSTRAINT CK_ConversacionesChat_Pares CHECK (idUsuarioA < idUsuarioB)
-                    );
-                END;
-
-                IF OBJECT_ID('dbo.MensajesChat', 'U') IS NULL
-                BEGIN
-                    CREATE TABLE dbo.MensajesChat (
-                        id int IDENTITY(1,1) NOT NULL PRIMARY KEY,
-                        idConversacion int NOT NULL,
-                        idRemitente int NOT NULL,
-                        texto nvarchar(1000) NOT NULL,
-                        fecha datetime2 NOT NULL DEFAULT SYSUTCDATETIME(),
-                        CONSTRAINT FK_MensajesChat_Conversacion
-                            FOREIGN KEY (idConversacion) REFERENCES dbo.ConversacionesChat(id)
-                            ON DELETE CASCADE
-                    );
-                END;";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Execute(query);
+            const string query = "exec AgregarAmigo @idUsuario, @identificador";
+            bool resultado = false;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                resultado = connection.ExecuteScalar<bool>(query, new { idUsuario, identificador = identificador.Trim() });
+            }
+            return resultado;
         }
 
         public int ObtenerOCrearConversacion(int idUsuarioA, int idUsuarioB)
         {
             if (idUsuarioA == idUsuarioB)
                 throw new ArgumentException("No se puede crear un chat consigo mismo.");
-
-            AsegurarTablasChat();
-
-            int menor = Math.Min(idUsuarioA, idUsuarioB);
-            int mayor = Math.Max(idUsuarioA, idUsuarioB);
-
-            const string query = @"
-                IF NOT EXISTS (
-                    SELECT 1 FROM ConversacionesChat
-                    WHERE idUsuarioA = @menor AND idUsuarioB = @mayor
-                )
-                BEGIN
-                    INSERT INTO ConversacionesChat (idUsuarioA, idUsuarioB)
-                    VALUES (@menor, @mayor);
-                END;
-
-                SELECT id FROM ConversacionesChat
-                WHERE idUsuarioA = @menor AND idUsuarioB = @mayor;";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.ExecuteScalar<int>(query, new { menor, mayor });
+            const string query = "exec GetConversacion @idUsuarioA, @idUsuarioB";
+            int idConversacion = 0;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                idConversacion = connection.ExecuteScalar<int>(query, new { idUsuarioA, idUsuarioB });
+            }
+            return idConversacion;
         }
 
         public bool UsuarioPerteneceAConversacion(int idUsuario, int idConversacion)
         {
-            AsegurarTablasChat();
-            const string query = @"SELECT CASE WHEN EXISTS (
-                                       SELECT 1 FROM ConversacionesChat
-                                       WHERE id = @idConversacion
-                                         AND (idUsuarioA = @idUsuario OR idUsuarioB = @idUsuario)
-                                   ) THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            return connection.ExecuteScalar<bool>(query, new { idUsuario, idConversacion });
+            const string query = "exec VerUsuarioPerteneceAConversacion @idUsuario, @idConversacion";
+            bool pertenece = false;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                pertenece = connection.ExecuteScalar<bool>(query, new { idUsuario, idConversacion });
+            }
+            return pertenece;
         }
 
         public void AgregarMensajeChat(int idConversacion, int idRemitente, string texto)
         {
-            AsegurarTablasChat();
-            const string query = @"
-                INSERT INTO MensajesChat (idConversacion, idRemitente, texto)
-                VALUES (@idConversacion, @idRemitente, @texto);
+            const string query = @"exec AgregarMensajeChat @idConversacion, @idRemitente, @texto";
 
-                UPDATE ConversacionesChat
-                SET fechaActualizacion = SYSUTCDATETIME()
-                WHERE id = @idConversacion;";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Execute(query, new { idConversacion, idRemitente, texto = texto.Trim() });
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Execute(query, new { idConversacion, idRemitente, texto = texto.Trim() });
+            }
         }
 
         public List<MensajeChat> ObtenerMensajesChat(int idConversacion)
         {
-            AsegurarTablasChat();
-            const string query = @"
-                SELECT m.id, m.idConversacion, m.idRemitente,
-                       m.texto, m.fecha, u.username AS remitenteNombre
-                FROM MensajesChat m
-                INNER JOIN Usuarios u ON u.id = m.idRemitente
-                WHERE m.idConversacion = @idConversacion
-                ORDER BY m.fecha, m.id;";
+            const string query = @"exec ObtenerMensajesChat @idConversacion";
 
             using SqlConnection connection = new SqlConnection(_connectionString);
             List<MensajeChat> mensajes = connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
