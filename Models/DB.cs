@@ -235,17 +235,17 @@ public class DB
     public Usuario ObtenerPerfilPublico(string identificador)
         {
             const string query = "exec ObtenerPerfilPublico @identificador";
-
+            Usuario usuario = new Usuario();
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                Usuario perfil = connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
+                usuario = connection.QueryFirstOrDefault<Usuario>(query, new { identificador });
             }
-            if (perfil == null)
+            if (usuario == null)
             {
                 return null;
             }
 
-            return perfil;
+            return usuario;
         }
 
     public bool SonAmigos(int idUsuarioA, int idUsuarioB)
@@ -386,69 +386,51 @@ public class DB
             {
                 mensaje.fecha = DateTime.SpecifyKind(mensaje.fecha, DateTimeKind.Utc);
             }
-
             return mensajes;
         }
 
         public Usuario ObtenerUsuarioConversacion(int idConversacion, int idUsuarioActual)
         {
-            AsegurarTablasChat();
-            const string query = @"
-                SELECT u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
-                FROM ConversacionesChat c
-                INNER JOIN Usuarios u ON u.id = CASE
-                    WHEN c.idUsuarioA = @idUsuarioActual THEN c.idUsuarioB
-                    ELSE c.idUsuarioA
-                END
-                WHERE c.id = @idConversacion
-                  AND (c.idUsuarioA = @idUsuarioActual OR c.idUsuarioB = @idUsuarioActual);";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            Usuario usuario = connection.QueryFirstOrDefault<Usuario>(query, new { idConversacion, idUsuarioActual });
-
+            const string query = "exec GetUsuarioConversacion @idConversacion, @idUsuarioActual";
+            Usuario usuario = new Usuario();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                usuario = connection.QueryFirstOrDefault<Usuario>(query, new { idConversacion, idUsuarioActual });
+            }
             if (usuario == null)
             {
                 return null;
             }
-
             return usuario;
         }
 
         public List<ConversacionChat> ObtenerConversacionesChat(int idUsuario)
         {
-            AsegurarTablasChat();
-            const string query = @"
-                SELECT c.id, c.idUsuarioA, c.idUsuarioB,
-                       u.id, u.username, u.nombre, u.apellido, u.email, u.tipo, u.foto
-                FROM ConversacionesChat c
-                INNER JOIN Usuarios u ON u.id = CASE
-                    WHEN c.idUsuarioA = @idUsuario THEN c.idUsuarioB
-                    ELSE c.idUsuarioA
-                END
-                WHERE c.idUsuarioA = @idUsuario OR c.idUsuarioB = @idUsuario
-                ORDER BY c.fechaActualizacion DESC;";
+            const string query = "exec GetMiembrosConversacion @idUsuario";
+            const string ultimoQuery = "exec GetUltimoMensaje @idConversacion";
+            List<ConversacionChat> conversaciones = new List<ConversacionChat>();
 
-            const string ultimoQuery = @"
-                SELECT TOP 1 id, idConversacion, idRemitente, texto, fecha
-                FROM MensajesChat
-                WHERE idConversacion = @idConversacion
-                ORDER BY fecha DESC, id DESC;";
-
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            var filas = connection.Query<ConversacionChat, Usuario, ConversacionChat>(
-                query,
-                (conversacion, usuario) =>
-                {
-                    conversacion.otroUsuario = usuario;
-                    return conversacion;
-                },
-                new { idUsuario },
-                splitOn: "id").ToList();
-
-            foreach (ConversacionChat conversacion in filas)
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                conversacion.ultimoMensaje = connection.QueryFirstOrDefault<MensajeChat>(
-                    ultimoQuery, new { idConversacion = conversacion.id });
+                conversaciones = connection.Query<ConversacionChat, Usuario, ConversacionChat>(
+                    query,
+                    (conversacion, usuario) =>
+                    {
+                        conversacion.otroUsuario = usuario;
+                        return conversacion;
+                    },
+                    new { idUsuario },
+                    splitOn: "id").ToList();
+            }
+
+            foreach (ConversacionChat conversacion in conversaciones)
+            {
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    conversacion.ultimoMensaje = connection.QueryFirstOrDefault<MensajeChat>(
+                        ultimoQuery,
+                        new { idConversacion = conversacion.id });
+                }
 
                 if (conversacion.ultimoMensaje != null)
                 {
@@ -458,6 +440,6 @@ public class DB
                 }
             }
 
-            return filas;
+            return conversaciones;
         }
     }
