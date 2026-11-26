@@ -42,24 +42,31 @@ public class DB
     {
         string query = "exec GetRestriccionesByUsuario @username";
         List<Restriccion> restricciones = new List<Restriccion>();
+        if (string.IsNullOrWhiteSpace(usuario))
+            return restricciones;
+
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
-            restricciones = connection.Query<Restriccion>(query, new { username = usuario }).ToList();
+            restricciones = connection.Query<Restriccion>(query, new { username = usuario.Trim() }).ToList();
         }
         return restricciones;
     }
     public List<Usuario> GetUsuariosByRestriccion(List<Restriccion> Restricciones) {
         string query = "exec GetUsuariosByRestriccion @idRestriccion";
         List<Usuario> users = new List<Usuario>();
+        if (Restricciones == null)
+            return users;
+
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
-            foreach (Restriccion r in Restricciones)
+            foreach (Restriccion r in Restricciones.Where(r => r != null && r.id > 0))
             {
                 List<Usuario> encontrados = connection.Query<Usuario>(query, new { idRestriccion = r.id }).ToList();
                 users.AddRange(encontrados);
             }
         }
         return users
+            .Where(user => user != null)
             .GroupBy(user => user.id)
             .Select(group => group.First())
             .ToList();
@@ -110,13 +117,18 @@ public class DB
 
     //agarra un objeto usuario y lo inserta en la base de datos, incluyendo sus restricciones.
     public void registrarUsuario(Usuario usuario) {
+        if (usuario == null)
+            throw new ArgumentNullException(nameof(usuario));
+
         string query = "exec insertUser @username, @nombre, @apellido, @email, @contrasena, @tipo";
         string userQuery = "exec getUsuarioByEmail @pemail";
-        Usuario usuarioRegistrado = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) { 
             connection.Open();
             connection.Execute(query, new { username = usuario.username, nombre = usuario.nombre, apellido = usuario.apellido, email = usuario.email, contrasena = usuario.contrasena, tipo = usuario.tipo });
-            usuarioRegistrado = connection.QueryFirstOrDefault<Usuario>(userQuery, new { pemail = usuario.email });
+            Usuario usuarioRegistrado = connection.QueryFirstOrDefault<Usuario>(userQuery, new { pemail = usuario.email });
+            if (usuarioRegistrado == null)
+                throw new InvalidOperationException("No se pudo recuperar el usuario registrado.");
+
             usuario.id = usuarioRegistrado.id;
 
             if (usuario.restricciones != null && usuario.restricciones.Any())
@@ -126,46 +138,49 @@ public class DB
 
     //devuelve un usuario si existe en la base de datos, si no devuelve null.
     public Usuario validarUsuario(string email, string contraseña) {
+        if (string.IsNullOrWhiteSpace(email) || contraseña == null)
+            return null;
+
         string query = "exec validateUserByEmNPass @pemail, @pass";
         string rquery = "exec getRestriccionesByidUser @idUser";
-        Usuario usuario = new Usuario();
+        Usuario user = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
-            connection.Open();//mantiene la bd abierta mientras se ejecuta el using, es mas eficiente bajo varios inserts.
-            //busca el usuario
-            usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email, pass = contraseña });
+            connection.Open();
+            Usuario usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email.Trim(), pass = contraseña });
             if (usuario != null) {
-                //busca las restricciones del usuario
                 List<Restriccion> restricciones = connection.Query<Restriccion>(rquery, new { idUser = usuario.id }).ToList();
                 usuario.restricciones = restricciones;
             }
+            user = usuario;
         }
-        return usuario;
+        return user;
     }
 
     //trae un usuario si su user existe
     public Usuario nomUsuarioExiste(string username) {
-        string query = "exec getUsuarioByUsername @pusername";
+        if (string.IsNullOrWhiteSpace(username))
+            return null;
         Usuario usuario = new Usuario();
+        string query = "exec getUsuarioByUsername @username";
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
             connection.Open();
-            usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pusername = username });
+            usuario = connection.QueryFirstOrDefault<Usuario>(query, new { username = username.Trim() });
             if (usuario != null)
-            {
                 CargarRestriccionesUsuario(usuario);
-            }
         }
         return usuario;
     }
     public Usuario emUsuarioExiste(string email) {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
         string query = "exec getUsuarioByEmail @pemail";
         Usuario usuario = new Usuario();
         using (SqlConnection connection = new SqlConnection(_connectionString)) {
             connection.Open();
             usuario = connection.QueryFirstOrDefault<Usuario>(query, new { pemail = email});
             if (usuario != null)
-            {
                 CargarRestriccionesUsuario(usuario);
-            }
         }
         return usuario;
     }
@@ -225,9 +240,14 @@ public class DB
         {
             const string query = "exec BuscarUsuariosPorTextoORestriccion @idUsuario, @texto";
             List<Usuario> usuarios = new List<Usuario>();
+            if (idUsuario <= 0)
+                return usuarios;
+
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                usuarios = connection.Query<Usuario>(query, new { idUsuario, texto = texto.Trim() }).ToList();
+                usuarios = connection.Query<Usuario>(
+                    query,
+                    new { idUsuario, texto = string.IsNullOrWhiteSpace(texto) ? string.Empty : texto.Trim() }).ToList();
             }
             return usuarios;
         }
@@ -281,13 +301,10 @@ public class DB
             return platos;
         }
 
-    public void ActualizarRestriccionesUsuario(int idUsuario, IEnumerable<string> nombres)
+    public void ActualizarRestriccionesUsuario(int idUsuario, List<string> restricciones)
         {
-            List<string> restricciones = nombres
-                .Where(nombre => !string.IsNullOrWhiteSpace(nombre))
-                .Select(nombre => nombre.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            if (idUsuario <= 0)
+                return;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -331,6 +348,9 @@ public class DB
     public bool AgregarAmigo(int idUsuario, string identificador)
         {
             const string query = "exec AgregarAmigo @idUsuario, @identificador";
+            if (idUsuario <= 0 || string.IsNullOrWhiteSpace(identificador))
+                return false;
+
             bool resultado = false;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -366,6 +386,8 @@ public class DB
         public void AgregarMensajeChat(int idConversacion, int idRemitente, string texto)
         {
             const string query = @"exec AgregarMensajeChat @idConversacion, @idRemitente, @texto";
+            if (idConversacion <= 0 || idRemitente <= 0 || string.IsNullOrWhiteSpace(texto))
+                return;
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -376,15 +398,21 @@ public class DB
         public List<MensajeChat> ObtenerMensajesChat(int idConversacion)
         {
             const string query = @"exec ObtenerMensajesChat @idConversacion";
+            List<MensajeChat> mensajes = new List<MensajeChat>();
+            if (idConversacion <= 0)
+                return mensajes;
 
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            List<MensajeChat> mensajes = connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                mensajes = connection.Query<MensajeChat>(query, new { idConversacion }).ToList();
+            }
 
-            // SQL Server guarda estas columnas con SYSUTCDATETIME(): indicar UTC evita
-            // que se serialicen como hora local o que el navegador las interprete mal.
             foreach (MensajeChat mensaje in mensajes)
             {
-                mensaje.fecha = DateTime.SpecifyKind(mensaje.fecha, DateTimeKind.Utc);
+                if (mensaje.fecha.Kind == DateTimeKind.Unspecified)
+                    mensaje.fecha = DateTime.SpecifyKind(mensaje.fecha, DateTimeKind.Utc);
+                else if (mensaje.fecha.Kind == DateTimeKind.Local)
+                    mensaje.fecha = mensaje.fecha.ToUniversalTime();
             }
             return mensajes;
         }
